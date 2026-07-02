@@ -1,0 +1,91 @@
+#:import dp kivymd.metrics.dp
+
+<SearchScreen>:
+    name: 'search'
+    
+    MDBoxLayout:
+        orientation: 'vertical'
+        padding: dp(10)
+        spacing: dp(10)
+        
+        MDTopAppBar:
+            title: "Search"
+            elevation: 4
+            left_action_items: [["arrow-left", lambda x: root.on_back_button()]]
+            right_action_items: [["tune", lambda x: root.show_search_options()]]
+        
+        MDBoxLayout:
+            orientation: 'horizontal'
+            padding: dp(10)
+            spacing: dp(10)
+            size_hint_y: None
+            height: dp(60)
+            
+            MDTextField:
+                id: search_field
+                hint_text: "Search..."
+                mode: "rectangle"
+                size_hint_x: 0.85
+                on_text_validate: root.perform_search()
+            
+            MDRaisedButton:
+                text: "Search"
+                icon: "magnify"
+                on_press: root.perform_search()
+                size_hint_x: 0.15
+                elevation: 2
+        
+        MDBoxLayout:
+            orientation: 'horizontal'
+            padding: dp(10)
+            spacing: dp(10)
+            size_hint_y: None
+            height: dp(30)
+            
+            MDLabel:
+                id: status_label
+                text: "Enter a search query"
+                halign: 'left'
+                font_style: 'Caption'
+                theme_text_color: "Secondary"
+            
+            MDProgressBar:
+                id: progress_bar
+                value: 0
+                size_hint_x: 0.7
+        
+        ScrollView:
+            bar_width: dp(5)
+            bar_color: 33/255, 150/255, 243/255, 0.5
+            bar_inactive_color: 33/255, 150/255, 243/255, 0.2
+            scroll_type: ['bars', 'content']
+            
+            MDBoxLayout:
+                id: results_list
+                orientation: 'vertical'
+                padding: dp(10)
+                spacing: dp(10)
+                size_hint_y: None
+                height: max(self.minimum_height, root.height - dp(300))
+                adaptive_height: True
+        
+        MDBoxLayout:
+            orientation: 'horizontal'
+            padding: dp(10)
+            spacing: dp(10)
+            size_hint_y: None
+            height: dp(60)
+            
+            MDRaisedButton:
+                text: "Clear"
+                icon: "delete"
+                on_press: root.clear_results()
+                size_hint_x: 0.48
+                elevation: 2
+                
+            MDRaisedButton:
+                text: "Stats"
+                icon: "chart-bar"
+                on_press: root.show_index_stats()
+                size_hint_x: 0.48
+                elevation: 2
