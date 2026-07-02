@@ -1,0 +1,233 @@
+#:import MDTextButton kivymd.uix.button.MDTextButton
+#:import MDIconButton kivymd.uix.button.MDIconButton
+#:import MDFlatButton kivymd.uix.button.MDFlatButton
+#:import MDProgressBar kivymd.uix.progressbar.MDProgressBar
+
+<VisionFeatureCard>:
+    orientation: 'vertical'
+    padding: dp(20)
+    spacing: dp(15)
+    radius: dp(32)
+    elevation: 2
+    md_bg_color: 0.1, 0.1, 0.1, 0.8
+    size_hint: 0.45, None
+    height: dp(180)
+    
+    MDBoxLayout:
+        orientation: 'vertical'
+        spacing: dp(10)
+        size_hint_y: None
+        height: self.minimum_height
+        
+        MDIcon:
+            id: feature_icon
+            icon: "image"
+            size: "48sp"
+            halign: 'center'
+            pos_hint: {'center_x': 0.5}
+            theme_text_color: "Primary"
+        
+        MDLabel:
+            id: feature_title
+            text: "Feature Title"
+            halign: 'center'
+            font_style: 'H6'
+            size_hint_y: None
+            height: dp(30)
+        
+        MDLabel:
+            id: feature_description
+            text: "Feature description"
+            halign: 'center'
+            font_style: 'Caption'
+            theme_text_color: "Secondary"
+            size_hint_y: None
+            height: dp(20)
+        
+        MDRaisedButton:
+            text: "Open"
+            pos_hint: {'center_x': 0.5}
+            size_hint: 0.8, None
+            height: dp(40)
+            on_press: root.open_feature() if hasattr(root, 'open_feature') else None
+
+
+<VisionScreen>:
+    name: 'vision'
+    
+    MDBoxLayout:
+        orientation: 'vertical'
+        padding: dp(10)
+        spacing: dp(10)
+        
+        MDTopAppBar:
+            title: "Vision Suite"
+            subtitle: "Synthesize Reality. Locally."
+            elevation: 4
+            left_action_items: [["arrow-left", lambda x: root.on_back_button()]]
+            
+        # Status bar
+        MDBoxLayout:
+            orientation: 'horizontal'
+            padding: dp(10)
+            spacing: dp(10)
+            size_hint_y: None
+            height: dp(40)
+            
+            MDLabel:
+                id: status_label
+                text: "Ready"
+                halign: 'left'
+                font_style: 'Caption'
+                theme_text_color: "Secondary"
+            
+            MDProgressBar:
+                id: progress_bar
+                value: 0
+                size_hint_x: 0.7
+        
+        # Feature cards row 1
+        MDBoxLayout:
+            orientation: 'horizontal'
+            padding: dp(10)
+            spacing: dp(15)
+            size_hint_y: None
+            height: dp(200)
+            adaptive_height: False
+            
+            VisionFeatureCard:
+                feature_icon: "ocr"
+                feature_title: "Image-to-Text"
+                feature_description: "OCR & Document Scanning"
+                
+                MDRaisedButton:
+                    on_press: root.open_file_manager("ocr")
+            
+            VisionFeatureCard:
+                feature_icon: "image-search"
+                feature_title: "Analyze"
+                feature_description: "Understand image content"
+                
+                MDRaisedButton:
+                    on_press: root.open_file_manager("analyze")
+        
+        # Feature cards row 2
+        MDBoxLayout:
+            orientation: 'horizontal'
+            padding: dp(10)
+            spacing: dp(15)
+            size_hint_y: None
+            height: dp(200)
+            adaptive_height: False
+            
+            VisionFeatureCard:
+                feature_icon: "palette"
+                feature_title: "Text-to-Image"
+                feature_description: "Synthesis"
+                
+                MDRaisedButton:
+                    on_press: root.generate_image()
+            
+            VisionFeatureCard:
+                feature_icon: "eye"
+                feature_title: "Describe"
+                feature_description: "Natural language description"
+                
+                MDRaisedButton:
+                    on_press: root.describe_image()
+        
+        # Neural Engine Status Card
+        MDCard:
+            orientation: 'vertical'
+            padding: dp(15)
+            spacing: dp(10)
+            radius: dp(16)
+            elevation: 1
+            md_bg_color: 0.1, 0.1, 0.1, 0.6
+            size_hint_y: None
+            height: dp(120)
+            
+            MDBoxLayout:
+                orientation: 'horizontal'
+                spacing: dp(10)
+                size_hint_y: None
+                height: dp(30)
+                
+                MDIcon:
+                    icon: "chip"
+                    size: "24sp"
+                    theme_text_color: "Primary"
+                
+                MDLabel:
+                    text: "Neural Engine Status"
+                    font_style: 'H6'
+                    halign: 'left'
+            
+            MDLabel:
+                text: "Stable Diffusion XL"
+                font_style: 'Body1'
+                halign: 'left'
+                size_hint_y: None
+                height: dp(25)
+            
+            MDBoxLayout:
+                orientation: 'horizontal'
+                spacing: dp(20)
+                size_hint_y: None
+                height: dp(40)
+                
+                MDBoxLayout:
+                    orientation: 'vertical'
+                    spacing: dp(5)
+                    
+                    MDLabel:
+                        text: "VRAM Usage"
+                        font_style: 'Caption'
+                        theme_text_color: "Secondary"
+                    
+                    MDLabel:
+                        text: "8.2 / 16GB"
+                        font_style: 'Body2'
+                
+                MDBoxLayout:
+                    orientation: 'vertical'
+                    spacing: dp(5)
+                    
+                    MDLabel:
+                        text: "CPU Load"
+                        font_style: 'Caption'
+                        theme_text_color: "Secondary"
+                    
+                    MDLabel:
+                        text: "24%"
+                        font_style: 'Body2'
+            
+            MDProgressBar:
+                value: 48.5
+                size_hint_y: None
+                height: dp(4)
+        
+        # Recent Generations Section
+        MDLabel:
+            text: "Recent Generations"
+            font_style: 'H6'
+            halign: 'left'
+            padding: dp(10), dp(0)
+            size_hint_y: None
+            height: dp(40)
+        
+        ScrollView:
+            id: scroll_view
+            bar_width: dp(5)
+            bar_color: 33/255, 150/255, 243/255, 0.5
+            bar_inactive_color: 33/255, 150/255, 243/255, 0.2
+            scroll_type: ['bars', 'content']
+            
+            MDBoxLayout:
+                id: recent_images
+                orientation: 'horizontal'
+                padding: dp(10)
+                spacing: dp(10)
+                size_hint_y: None
+                height: dp(120)
+                adaptive_width: True
