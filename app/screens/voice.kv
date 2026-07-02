@@ -1,0 +1,141 @@
+#:import dp kivymd.metrics.dp
+
+<VoiceScreen>:
+    name: 'voice'
+    
+    MDBoxLayout:
+        orientation: 'vertical'
+        padding: dp(10)
+        spacing: dp(10)
+        
+        MDTopAppBar:
+            title: "Voice Assistant"
+            subtitle: "Speak to TurboMind"
+            elevation: 4
+            left_action_items: [["arrow-left", lambda x: root.on_back_button()]]
+            right_action_items: [["cog", lambda x: root.show_settings()]]
+        
+        # Status Card
+        MDCard:
+            orientation: 'vertical'
+            padding: dp(15)
+            spacing: dp(10)
+            radius: dp(16)
+            elevation: 1
+            md_bg_color: 0.1, 0.1, 0.1, 0.6
+            size_hint_y: None
+            height: dp(100)
+            
+            MDBoxLayout:
+                orientation: 'horizontal'
+                spacing: dp(10)
+                
+                MDIcon:
+                    icon: "mic"
+                    size: "24sp"
+                    theme_text_color: "Primary"
+                
+                MDLabel:
+                    id: status_label
+                    text: "🤖 Ready"
+                    font_style: 'Body1'
+                    halign: 'left'
+            
+            MDLabel:
+                text: "Click the microphone to start listening"
+                font_style: 'Caption'
+                theme_text_color: "Secondary"
+                halign: 'left'
+            
+            MDProgressBar:
+                id: progress_bar
+                value: 0
+                size_hint_y: None
+                height: dp(4)
+        
+        # Main Listen Button
+        MDBoxLayout:
+            orientation: 'vertical'
+            padding: dp(10)
+            spacing: dp(10)
+            size_hint_y: None
+            height: dp(120)
+            
+            MDRaisedButton:
+                id: listen_button
+                text: "Start Listening"
+                icon: "mic"
+                on_press: root.toggle_listening()
+                size_hint: 1, None
+                height: dp(80)
+                elevation: 4
+                font_size: "18sp"
+                md_bg_color: 0.21, 0.58, 0.94, 1
+        
+        # Input Field
+        MDBoxLayout:
+            orientation: 'horizontal'
+            padding: dp(10)
+            spacing: dp(10)
+            size_hint_y: None
+            height: dp(60)
+            
+            MDTextField:
+                id: input_field
+                hint_text: "Type a command..."
+                mode: "rectangle"
+                size_hint_x: 0.85
+                on_text_validate: root.send_text_command()
+            
+            MDRaisedButton:
+                text: "Send"
+                icon: "send"
+                on_press: root.send_text_command()
+                size_hint_x: 0.15
+                elevation: 2
+        
+        # Conversation Display
+        MDLabel:
+            text: "Conversation"
+            font_style: 'H6'
+            halign: 'left'
+            padding: dp(10), dp(0)
+            size_hint_y: None
+            height: dp(40)
+        
+        ScrollView:
+            bar_width: dp(5)
+            bar_color: 33/255, 150/255, 243/255, 0.5
+            bar_inactive_color: 33/255, 150/255, 243/255, 0.2
+            scroll_type: ['bars', 'content']
+            
+            MDBoxLayout:
+                id: conversation_list
+                orientation: 'vertical'
+                padding: dp(10)
+                spacing: dp(10)
+                size_hint_y: None
+                height: max(self.minimum_height, root.height - dp(500))
+                adaptive_height: True
+        
+        # Action Buttons
+        MDBoxLayout:
+            orientation: 'horizontal'
+            padding: dp(10)
+            spacing: dp(10)
+            size_hint_y: None
+            height: dp(60)
+            
+            MDRaisedButton:
+                text: "Clear"
+                icon: "delete"
+                on_press: root.clear_conversation()
+                size_hint_x: 0.48
+                elevation: 2
+                
+            MDRaisedButton:
+                text: "Language"
+                icon: "translate"
+                on_press: root.show_language_dialog()
+                size_hint_x: 0.48
+                elevation: 2
