@@ -1,0 +1,5 @@
+numpy>=1.24.0
+torch>=2.0.0
+transformers>=4.30.0
+kivy>=2.1.0
+kivymd>=1.1.1
