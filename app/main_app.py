@@ -12,14 +12,12 @@ from kivymd.app import MDApp
 from kivymd.uix.screenmanager import MDScreenManager
 from kivymd.uix.screen import MDScreen
 
+# Import screens
+from app.screens.chat import ChatScreen
+
 
 class HomeScreen(MDScreen):
     """Home screen with AI Chat, Documents, Voice, etc. cards"""
-    pass
-
-
-class ChatScreen(MDScreen):
-    """AI Chat screen"""
     pass
 
 
@@ -63,6 +61,9 @@ class TurboMindApp(MDApp):
         self.theme_cls.primary_palette = "Blue"
         self.theme_cls.accent_palette = "Cyan"
         
+        # Initialize runtime components
+        self._init_runtime()
+        
         # Screen manager
         self.screen_manager = MDScreenManager()
         
@@ -75,6 +76,39 @@ class TurboMindApp(MDApp):
         self.screen_manager.add_widget(KnowledgeScreen(name='knowledge'))
         self.screen_manager.add_widget(SearchScreen(name='search'))
         self.screen_manager.add_widget(SettingsScreen(name='settings'))
+    
+    def _init_runtime(self):
+        """Initialize runtime components"""
+        try:
+            from runtime.context_manager import ContextManager
+            from runtime.generation_engine import GenerationEngine
+            from runtime.inference_engine import InferenceEngine
+            from runtime.memory_manager import MemoryManager
+            from runtime.scheduler import Scheduler
+            from runtime.tokenizer import Tokenizer
+            from runtime.kv_cache import KVCacheManager
+            
+            # Create runtime instances
+            self.context_manager = ContextManager()
+            self.generation_engine = GenerationEngine()
+            self.inference_engine = InferenceEngine()
+            self.memory_manager = MemoryManager()
+            self.scheduler = Scheduler()
+            self.tokenizer = Tokenizer()
+            self.kv_cache = KVCacheManager()
+            
+            print("✅ Runtime components initialized")
+            
+        except Exception as e:
+            print(f"⚠️  Error initializing runtime: {e}")
+            # Create dummy instances
+            self.context_manager = None
+            self.generation_engine = None
+            self.inference_engine = None
+            self.memory_manager = None
+            self.scheduler = None
+            self.tokenizer = None
+            self.kv_cache = None
     
     def build(self):
         """Build the application"""
@@ -114,6 +148,10 @@ class TurboMindApp(MDApp):
             print("📱 Running on Android")
         else:
             print("💻 Running on desktop")
+        
+        # Initialize first conversation
+        if self.context_manager:
+            self.context_manager.create_conversation(title="Welcome")
 
 
 # KV Language for Home Screen
