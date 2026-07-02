@@ -1,0 +1,354 @@
+#:import utils utils
+#:import colors colors
+#:import FadeTransition kivymd.uix.transition.FadeTransition
+#:import MDRaisedButton kivymd.uix.button.MDRaisedButton
+#:import MDCard kivymd.uix.card.MDCard
+#:import MDLabel kivymd.uix.label.MDLabel
+#:import MDIconButton kivymd.uix.button.MDIconButton
+#:import MDBoxLayout kivymd.uix.boxlayout.MDBoxLayout
+#:import MDGridLayout kivymd.uix.gridlayout.MDGridLayout
+
+<HomeScreen>:
+    name: 'home'
+    MDBoxLayout:
+        orientation: 'vertical'
+        spacing: '24dp'
+        padding: '16dp'
+        
+        # Header
+        MDBoxLayout:
+            orientation: 'horizontal'
+            size_hint_y: None
+            height: '60dp'
+            spacing: '16dp'
+            
+            MDLabel:
+                text: 'TurboMind AI'
+                font_style: 'H4'
+                halign: 'left'
+                valign: 'middle'
+                theme_text_color: 'Primary'
+            
+            MDIconButton:
+                icon: 'cog'
+                on_release: root.manager.current = 'settings'
+                theme_icon_color: 'Primary'
+        
+        # Scrollable Feature Cards
+        ScrollView:
+            do_scroll_x: False
+            do_scroll_y: True
+            
+            MDGridLayout:
+                cols: 1
+                spacing: '16dp'
+                padding: '8dp'
+                adaptive_height: True
+                
+                # AI Chat Card
+                MDCard:
+                    orientation: 'vertical'
+                    size_hint_y: None
+                    height: '180dp'
+                    radius: [32, 32, 32, 32]
+                    elevation: 8
+                    md_bg_color: colors.get('card_bg')
+                    
+                    MDBoxLayout:
+                        orientation: 'horizontal'
+                        padding: '16dp'
+                        spacing: '16dp'
+                        
+                        MDIconButton:
+                            icon: 'chat'
+                            size_hint: None, None
+                            size: '48dp', '48dp'
+                            theme_icon_color: 'Primary'
+                            user_font_size: '36sp'
+                        
+                        MDBoxLayout:
+                            orientation: 'vertical'
+                            spacing: '8dp'
+                            
+                            MDLabel:
+                                text: 'AI Chat'
+                                font_style: 'H6'
+                                theme_text_color: 'Primary'
+                            
+                            MDLabel:
+                                text: 'Text-based AI assistant for all your queries'
+                                font_style: 'Body1'
+                                theme_text_color: 'Secondary'
+                                size_hint_y: None
+                                height: self.texture_size[1]
+                        
+                        MDRaisedButton:
+                            text: 'Open'
+                            size_hint: None, None
+                            size: '100dp', '40dp'
+                            on_release: root.manager.current = 'chat'
+                            elevation: 0
+                
+                # Documents Card
+                MDCard:
+                    orientation: 'vertical'
+                    size_hint_y: None
+                    height: '180dp'
+                    radius: [32, 32, 32, 32]
+                    elevation: 8
+                    md_bg_color: colors.get('card_bg')
+                    
+                    MDBoxLayout:
+                        orientation: 'horizontal'
+                        padding: '16dp'
+                        spacing: '16dp'
+                        
+                        MDIconButton:
+                            icon: 'file-document'
+                            size_hint: None, None
+                            size: '48dp', '48dp'
+                            theme_icon_color: 'Primary'
+                            user_font_size: '36sp'
+                        
+                        MDBoxLayout:
+                            orientation: 'vertical'
+                            spacing: '8dp'
+                            
+                            MDLabel:
+                                text: 'Documents'
+                                font_style: 'H6'
+                                theme_text_color: 'Primary'
+                            
+                            MDLabel:
+                                text: 'Process PDF, DOCX, TXT files'
+                                font_style: 'Body1'
+                                theme_text_color: 'Secondary'
+                                size_hint_y: None
+                                height: self.texture_size[1]
+                        
+                        MDRaisedButton:
+                            text: 'Open'
+                            size_hint: None, None
+                            size: '100dp', '40dp'
+                            on_release: root.manager.current = 'documents'
+                            elevation: 0
+                
+                # Voice Card
+                MDCard:
+                    orientation: 'vertical'
+                    size_hint_y: None
+                    height: '180dp'
+                    radius: [32, 32, 32, 32]
+                    elevation: 8
+                    md_bg_color: colors.get('card_bg')
+                    
+                    MDBoxLayout:
+                        orientation: 'horizontal'
+                        padding: '16dp'
+                        spacing: '16dp'
+                        
+                        MDIconButton:
+                            icon: 'microphone'
+                            size_hint: None, None
+                            size: '48dp', '48dp'
+                            theme_icon_color: 'Primary'
+                            user_font_size: '36sp'
+                        
+                        MDBoxLayout:
+                            orientation: 'vertical'
+                            spacing: '8dp'
+                            
+                            MDLabel:
+                                text: 'Voice Assistant'
+                                font_style: 'H6'
+                                theme_text_color: 'Primary'
+                            
+                            MDLabel:
+                                text: 'Speak and get AI responses'
+                                font_style: 'Body1'
+                                theme_text_color: 'Secondary'
+                                size_hint_y: None
+                                height: self.texture_size[1]
+                        
+                        MDRaisedButton:
+                            text: 'Open'
+                            size_hint: None, None
+                            size: '100dp', '40dp'
+                            on_release: root.manager.current = 'voice'
+                            elevation: 0
+                
+                # Images Card
+                MDCard:
+                    orientation: 'vertical'
+                    size_hint_y: None
+                    height: '180dp'
+                    radius: [32, 32, 32, 32]
+                    elevation: 8
+                    md_bg_color: colors.get('card_bg')
+                    
+                    MDBoxLayout:
+                        orientation: 'horizontal'
+                        padding: '16dp'
+                        spacing: '16dp'
+                        
+                        MDIconButton:
+                            icon: 'image'
+                            size_hint: None, None
+                            size: '48dp', '48dp'
+                            theme_icon_color: 'Primary'
+                            user_font_size: '36sp'
+                        
+                        MDBoxLayout:
+                            orientation: 'vertical'
+                            spacing: '8dp'
+                            
+                            MDLabel:
+                                text: 'Images'
+                                font_style: 'H6'
+                                theme_text_color: 'Primary'
+                            
+                            MDLabel:
+                                text: 'OCR and vision AI for image analysis'
+                                font_style: 'Body1'
+                                theme_text_color: 'Secondary'
+                                size_hint_y: None
+                                height: self.texture_size[1]
+                        
+                        MDRaisedButton:
+                            text: 'Open'
+                            size_hint: None, None
+                            size: '100dp', '40dp'
+                            on_release: root.manager.current = 'vision'
+                            elevation: 0
+                
+                # Knowledge Card
+                MDCard:
+                    orientation: 'vertical'
+                    size_hint_y: None
+                    height: '180dp'
+                    radius: [32, 32, 32, 32]
+                    elevation: 8
+                    md_bg_color: colors.get('card_bg')
+                    
+                    MDBoxLayout:
+                        orientation: 'horizontal'
+                        padding: '16dp'
+                        spacing: '16dp'
+                        
+                        MDIconButton:
+                            icon: 'brain'
+                            size_hint: None, None
+                            size: '48dp', '48dp'
+                            theme_icon_color: 'Primary'
+                            user_font_size: '36sp'
+                        
+                        MDBoxLayout:
+                            orientation: 'vertical'
+                            spacing: '8dp'
+                            
+                            MDLabel:
+                                text: 'Knowledge'
+                                font_style: 'H6'
+                                theme_text_color: 'Primary'
+                            
+                            MDLabel:
+                                text: 'Knowledge base with semantic search'
+                                font_style: 'Body1'
+                                theme_text_color: 'Secondary'
+                                size_hint_y: None
+                                height: self.texture_size[1]
+                        
+                        MDRaisedButton:
+                            text: 'Open'
+                            size_hint: None, None
+                            size: '100dp', '40dp'
+                            on_release: root.manager.current = 'knowledge'
+                            elevation: 0
+                
+                # Models Card
+                MDCard:
+                    orientation: 'vertical'
+                    size_hint_y: None
+                    height: '180dp'
+                    radius: [32, 32, 32, 32]
+                    elevation: 8
+                    md_bg_color: colors.get('card_bg')
+                    
+                    MDBoxLayout:
+                        orientation: 'horizontal'
+                        padding: '16dp'
+                        spacing: '16dp'
+                        
+                        MDIconButton:
+                            icon: 'robot'
+                            size_hint: None, None
+                            size: '48dp', '48dp'
+                            theme_icon_color: 'Primary'
+                            user_font_size: '36sp'
+                        
+                        MDBoxLayout:
+                            orientation: 'vertical'
+                            spacing: '8dp'
+                            
+                            MDLabel:
+                                text: 'Models'
+                                font_style: 'H6'
+                                theme_text_color: 'Primary'
+                            
+                            MDLabel:
+                                text: 'Load, unload, download, and benchmark AI models'
+                                font_style: 'Body1'
+                                theme_text_color: 'Secondary'
+                                size_hint_y: None
+                                height: self.texture_size[1]
+                        
+                        MDRaisedButton:
+                            text: 'Open'
+                            size_hint: None, None
+                            size: '100dp', '40dp'
+                            on_release: root.manager.current = 'models'
+                            elevation: 0
+                
+                # Search Card
+                MDCard:
+                    orientation: 'vertical'
+                    size_hint_y: None
+                    height: '180dp'
+                    radius: [32, 32, 32, 32]
+                    elevation: 8
+                    md_bg_color: colors.get('card_bg')
+                    
+                    MDBoxLayout:
+                        orientation: 'horizontal'
+                        padding: '16dp'
+                        spacing: '16dp'
+                        
+                        MDIconButton:
+                            icon: 'magnify'
+                            size_hint: None, None
+                            size: '48dp', '48dp'
+                            theme_icon_color: 'Primary'
+                            user_font_size: '36sp'
+                        
+                        MDBoxLayout:
+                            orientation: 'vertical'
+                            spacing: '8dp'
+                            
+                            MDLabel:
+                                text: 'Search'
+                                font_style: 'H6'
+                                theme_text_color: 'Primary'
+                            
+                            MDLabel:
+                                text: 'Hybrid semantic and keyword search'
+                                font_style: 'Body1'
+                                theme_text_color: 'Secondary'
+                                size_hint_y: None
+                                height: self.texture_size[1]
+                        
+                        MDRaisedButton:
+                            text: 'Open'
+                            size_hint: None, None
+                            size: '100dp', '40dp'
+                            on_release: root.manager.current = 'search'
+                            elevation: 0
