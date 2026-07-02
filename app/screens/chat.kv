@@ -1,0 +1,91 @@
+#:import MDTextButton kivymd.uix.button.MDTextButton
+#:import MDIconButton kivymd.uix.button.MDIconButton
+#:import MDFlatButton kivymd.uix.button.MDFlatButton
+
+<ChatMessage>:
+    orientation: 'vertical'
+    padding: dp(10)
+    spacing: dp(5)
+    size_hint_y: None
+    height: self.minimum_height
+    
+    MDBoxLayout:
+        id: message_bubble
+        orientation: 'vertical'
+        padding: dp(10)
+        spacing: dp(5)
+        radius: dp(15)
+        md_bg_color: 0.9, 0.9, 0.9, 1
+        size_hint_y: None
+        height: self.minimum_height
+        
+        MDLabel:
+            id: message_text
+            text: ''
+            halign: 'left'
+            valign: 'top'
+            size_hint_y: None
+            height: self.texture_size[1]
+            text_size: self.width - dp(20), None
+            font_style: 'Body1'
+
+
+<ChatInput>:
+    orientation: 'horizontal'
+    padding: dp(10)
+    spacing: dp(10)
+    size_hint_y: None
+    height: dp(60)
+    
+    MDTextField:
+        id: text_input
+        hint_text: "Type a message..."
+        multiline: False
+        mode: "rectangle"
+        size_hint_x: 0.85
+        on_text_validate: root.on_enter(self, self.text)
+        
+    MDIconButton:
+        icon: "send"
+        theme_text_color: "Primary"
+        on_press: root.send_message()
+        size_hint_x: None
+        width: dp(48)
+
+
+<ChatScreen>:
+    name: 'chat'
+    
+    MDBoxLayout:
+        orientation: 'vertical'
+        padding: dp(10)
+        spacing: dp(10)
+        
+        MDTopAppBar:
+            title: "AI Chat"
+            elevation: 4
+            left_action_items: [["arrow-left", lambda x: root.on_back_button()]]
+            right_action_items: 
+                [["content-copy", lambda x: root.copy_last_response()], 
+                 ["delete", lambda x: root.clear_chat()], 
+                 ["refresh", lambda x: root.new_chat()]]
+            
+        ScrollView:
+            id: scroll_view
+            bar_width: dp(5)
+            bar_color: app.theme_cls.primary_palette[:4] + [0.5]
+            bar_inactive_color: app.theme_cls.primary_palette[:4] + [0.2]
+            scroll_type: ['bars', 'content']
+            
+            MDBoxLayout:
+                id: chat_history
+                orientation: 'vertical'
+                padding: dp(10)
+                spacing: dp(10)
+                size_hint_y: None
+                height: max(self.minimum_height, root.height - dp(150))
+                
+        ChatInput:
+            id: chat_input
+            size_hint_y: None
+            height: dp(60)
