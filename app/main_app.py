@@ -12,42 +12,19 @@ from kivymd.app import MDApp
 from kivymd.uix.screenmanager import MDScreenManager
 from kivymd.uix.screen import MDScreen
 
-# Import screens
+# Import actual screens from app.screens
 from app.screens.chat import ChatScreen
+from app.screens.documents import DocumentsScreen
+from app.screens.vision import VisionScreen
+from app.screens.knowledge import KnowledgeScreen
+from app.screens.models import ModelsScreen
+from app.screens.voice import VoiceScreen
+from app.screens.settings import SettingsScreen
+from app.screens.search import SearchScreen
 
 
 class HomeScreen(MDScreen):
     """Home screen with AI Chat, Documents, Voice, etc. cards"""
-    pass
-
-
-class DocumentScreen(MDScreen):
-    """Document AI screen"""
-    pass
-
-
-class VoiceScreen(MDScreen):
-    """Voice Assistant screen"""
-    pass
-
-
-class ImageScreen(MDScreen):
-    """Image AI screen"""
-    pass
-
-
-class KnowledgeScreen(MDScreen):
-    """Knowledge Base screen"""
-    pass
-
-
-class SearchScreen(MDScreen):
-    """Search screen"""
-    pass
-
-
-class SettingsScreen(MDScreen):
-    """Settings screen"""
     pass
 
 
@@ -70,12 +47,13 @@ class TurboMindApp(MDApp):
         # Register screens
         self.screen_manager.add_widget(HomeScreen(name='home'))
         self.screen_manager.add_widget(ChatScreen(name='chat'))
-        self.screen_manager.add_widget(DocumentScreen(name='documents'))
-        self.screen_manager.add_widget(VoiceScreen(name='voice'))
-        self.screen_manager.add_widget(ImageScreen(name='images'))
+        self.screen_manager.add_widget(DocumentsScreen(name='documents'))
+        self.screen_manager.add_widget(VisionScreen(name='vision'))
         self.screen_manager.add_widget(KnowledgeScreen(name='knowledge'))
-        self.screen_manager.add_widget(SearchScreen(name='search'))
+        self.screen_manager.add_widget(ModelsScreen(name='models'))
+        self.screen_manager.add_widget(VoiceScreen(name='voice'))
         self.screen_manager.add_widget(SettingsScreen(name='settings'))
+        self.screen_manager.add_widget(SearchScreen(name='search'))
     
     def _init_runtime(self):
         """Initialize runtime components"""
@@ -97,11 +75,10 @@ class TurboMindApp(MDApp):
             self.tokenizer = Tokenizer()
             self.kv_cache = KVCacheManager()
             
-            print("✅ Runtime components initialized")
+            print(" Runtime components initialized")
             
         except Exception as e:
-            print(f"⚠️  Error initializing runtime: {e}")
-            # Create dummy instances
+            print(f" Error initializing runtime: {e}")
             self.context_manager = None
             self.generation_engine = None
             self.inference_engine = None
@@ -112,11 +89,8 @@ class TurboMindApp(MDApp):
     
     def build(self):
         """Build the application"""
-        print("🎨 Building TurboMind AI...")
-        
-        # Load KV language files
+        print(" Building TurboMind AI...")
         self.load_kv_files()
-        
         return self.screen_manager
     
     def load_kv_files(self):
@@ -125,31 +99,29 @@ class TurboMindApp(MDApp):
             'app/screens/home.kv',
             'app/screens/chat.kv',
             'app/screens/documents.kv',
-            'app/screens/voice.kv',
-            'app/screens/images.kv',
+            'app/screens/vision.kv',
             'app/screens/knowledge.kv',
-            'app/screens/search.kv',
+            'app/screens/models.kv',
+            'app/screens/voice.kv',
             'app/screens/settings.kv',
+            'app/screens/search.kv',
         ]
         
         for kv_file in kv_files:
             try:
                 Builder.load_file(kv_file)
-                print(f"✅ Loaded: {kv_file}")
+                print(f" Loaded: {kv_file}")
             except Exception as e:
-                print(f"⚠️  Could not load {kv_file}: {e}")
+                print(f" Could not load {kv_file}: {e}")
     
     def on_start(self):
         """Called when the app starts"""
-        print("🚀 TurboMind AI started!")
-        
-        # Check platform
+        print(" TurboMind AI started!")
         if platform == 'android':
-            print("📱 Running on Android")
+            print(" Running on Android")
         else:
-            print("💻 Running on desktop")
+            print(" Running on desktop")
         
-        # Initialize first conversation
         if self.context_manager:
             self.context_manager.create_conversation(title="Welcome")
 
@@ -173,6 +145,14 @@ Builder.load_string('''
             size_hint_y: None
             height: self.texture_size[1]
         
+        MDLabel:
+            text: "A 100% Offline AI Assistant"
+            halign: 'center'
+            font_style: 'Subtitle1'
+            theme_text_color: "Secondary"
+            size_hint_y: None
+            height: self.texture_size[1]
+        
         MDGridLayout:
             cols: 2
             spacing: dp(20)
@@ -184,7 +164,7 @@ Builder.load_string('''
                 spacing: dp(10)
                 elevation: 5
                 radius: dp(15)
-                md_bg_color: app.theme_cls.bg_normal
+                md_bg_color: 0.1, 0.1, 0.1, 0.6
                 
                 MDIcon:
                     icon: "chat"
@@ -199,7 +179,7 @@ Builder.load_string('''
                     font_style: 'H6'
                 
                 MDLabel:
-                    text: "Talk with AI"
+                    text: "Talk with AI Assistant"
                     halign: 'center'
                     font_style: 'Caption'
                     theme_text_color: "Secondary"
@@ -208,6 +188,7 @@ Builder.load_string('''
                     text: "Open"
                     pos_hint: {'center_x': 0.5}
                     on_press: root.manager.current = 'chat'
+                    elevation: 2
             
             MDCard:
                 orientation: 'vertical'
@@ -215,7 +196,7 @@ Builder.load_string('''
                 spacing: dp(10)
                 elevation: 5
                 radius: dp(15)
-                md_bg_color: app.theme_cls.bg_normal
+                md_bg_color: 0.1, 0.1, 0.1, 0.6
                 
                 MDIcon:
                     icon: "file-document"
@@ -230,7 +211,7 @@ Builder.load_string('''
                     font_style: 'H6'
                 
                 MDLabel:
-                    text: "Analyze PDFs, Docs"
+                    text: "Analyze PDFs, Docs, etc."
                     halign: 'center'
                     font_style: 'Caption'
                     theme_text_color: "Secondary"
@@ -239,6 +220,7 @@ Builder.load_string('''
                     text: "Open"
                     pos_hint: {'center_x': 0.5}
                     on_press: root.manager.current = 'documents'
+                    elevation: 2
             
             MDCard:
                 orientation: 'vertical'
@@ -246,7 +228,7 @@ Builder.load_string('''
                 spacing: dp(10)
                 elevation: 5
                 radius: dp(15)
-                md_bg_color: app.theme_cls.bg_normal
+                md_bg_color: 0.1, 0.1, 0.1, 0.6
                 
                 MDIcon:
                     icon: "microphone"
@@ -270,6 +252,7 @@ Builder.load_string('''
                     text: "Open"
                     pos_hint: {'center_x': 0.5}
                     on_press: root.manager.current = 'voice'
+                    elevation: 2
             
             MDCard:
                 orientation: 'vertical'
@@ -277,7 +260,7 @@ Builder.load_string('''
                 spacing: dp(10)
                 elevation: 5
                 radius: dp(15)
-                md_bg_color: app.theme_cls.bg_normal
+                md_bg_color: 0.1, 0.1, 0.1, 0.6
                 
                 MDIcon:
                     icon: "image"
@@ -292,7 +275,7 @@ Builder.load_string('''
                     font_style: 'H6'
                 
                 MDLabel:
-                    text: "OCR & Vision"
+                    text: "OCR & Vision AI"
                     halign: 'center'
                     font_style: 'Caption'
                     theme_text_color: "Secondary"
@@ -300,7 +283,8 @@ Builder.load_string('''
                 MDRaisedButton:
                     text: "Open"
                     pos_hint: {'center_x': 0.5}
-                    on_press: root.manager.current = 'images'
+                    on_press: root.manager.current = 'vision'
+                    elevation: 2
             
             MDCard:
                 orientation: 'vertical'
@@ -308,7 +292,7 @@ Builder.load_string('''
                 spacing: dp(10)
                 elevation: 5
                 radius: dp(15)
-                md_bg_color: app.theme_cls.bg_normal
+                md_bg_color: 0.1, 0.1, 0.1, 0.6
                 
                 MDIcon:
                     icon: "brain"
@@ -332,6 +316,7 @@ Builder.load_string('''
                     text: "Open"
                     pos_hint: {'center_x': 0.5}
                     on_press: root.manager.current = 'knowledge'
+                    elevation: 2
             
             MDCard:
                 orientation: 'vertical'
@@ -339,7 +324,39 @@ Builder.load_string('''
                 spacing: dp(10)
                 elevation: 5
                 radius: dp(15)
-                md_bg_color: app.theme_cls.bg_normal
+                md_bg_color: 0.1, 0.1, 0.1, 0.6
+                
+                MDIcon:
+                    icon: "cpu-64-bit"
+                    size: "64sp"
+                    halign: 'center'
+                    pos_hint: {'center_x': 0.5}
+                    theme_text_color: "Primary"
+                
+                MDLabel:
+                    text: "Models"
+                    halign: 'center'
+                    font_style: 'H6'
+                
+                MDLabel:
+                    text: "Model Manager"
+                    halign: 'center'
+                    font_style: 'Caption'
+                    theme_text_color: "Secondary"
+                
+                MDRaisedButton:
+                    text: "Open"
+                    pos_hint: {'center_x': 0.5}
+                    on_press: root.manager.current = 'models'
+                    elevation: 2
+            
+            MDCard:
+                orientation: 'vertical'
+                padding: dp(20)
+                spacing: dp(10)
+                elevation: 5
+                radius: dp(15)
+                md_bg_color: 0.1, 0.1, 0.1, 0.6
                 
                 MDIcon:
                     icon: "magnify"
@@ -363,6 +380,7 @@ Builder.load_string('''
                     text: "Open"
                     pos_hint: {'center_x': 0.5}
                     on_press: root.manager.current = 'search'
+                    elevation: 2
         
         MDBottomAppBar:
             MDTopAppBar:

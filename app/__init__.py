@@ -1,12 +1,9 @@
-# TurboMind AI - App Package
-# ===========================
+# TurboMind AI - Application Package
+# ====================================
 
 """
-TurboMind AI Application Package
-This package contains all the UI components and screens for the TurboMind AI app.
+Application Package for TurboMind AI.
+Contains the main application and all UI components.
 """
 
-from .main_app import TurboMindApp
-
-__all__ = ['TurboMindApp']
 __version__ = '1.0.0'
