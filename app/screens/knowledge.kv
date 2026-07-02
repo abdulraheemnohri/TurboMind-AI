@@ -1,0 +1,314 @@
+#:import MDTextButton kivymd.uix.button.MDTextButton
+#:import MDIconButton kivymd.uix.button.MDIconButton
+#:import MDFlatButton kivymd.uix.button.MDFlatButton
+#:import MDProgressBar kivymd.uix.progressbar.MDProgressBar
+#:import MDCircularProgressBar kivymd.uix.progressbar.MDCircularProgressBar
+
+<KnowledgeSiloCard>:
+    orientation: 'vertical'
+    padding: dp(15)
+    spacing: dp(10)
+    radius: dp(16)
+    elevation: 2
+    md_bg_color: 0.1, 0.1, 0.1, 0.6
+    size_hint_y: None
+    height: dp(140)
+
+
+<KnowledgeGraphVisualization>:
+    orientation: 'vertical'
+    padding: dp(10)
+    spacing: dp(10)
+    canvas.before:
+        Color:
+            rgba: 0.1, 0.1, 0.1, 0.8
+        Rectangle:
+            pos: self.pos
+            size: self.size
+
+
+<KnowledgeScreen>:
+    name: 'knowledge'
+    
+    MDBoxLayout:
+        orientation: 'vertical'
+        padding: dp(10)
+        spacing: dp(10)
+        
+        MDTopAppBar:
+            title: "Knowledge Base"
+            subtitle: "Manage your private intelligence"
+            elevation: 4
+            left_action_items: [["arrow-left", lambda x: root.on_back_button()]]
+            right_action_items: [["magnify", lambda x: root.search_knowledge()], ["chart-bar", lambda x: root.get_stats()]]
+            
+        # Local Knowledge Graph Section
+        MDCard:
+            orientation: 'vertical'
+            padding: dp(15)
+            spacing: dp(10)
+            radius: dp(16)
+            elevation: 1
+            md_bg_color: 0.1, 0.1, 0.1, 0.6
+            size_hint_y: None
+            height: dp(200)
+            
+            MDBoxLayout:
+                orientation: 'horizontal'
+                spacing: dp(10)
+                size_hint_y: None
+                height: dp(30)
+                
+                MDIcon:
+                    icon: "graphql"
+                    size: "32sp"
+                    theme_text_color: "Primary"
+                
+                MDLabel:
+                    text: "Local Knowledge Graph"
+                    font_style: 'H6'
+                    halign: 'left'
+            
+            MDLabel:
+                text: "All data remains indexed locally on your device, ensuring total privacy and offline accessibility."
+                font_style: 'Caption'
+                theme_text_color: "Secondary"
+                halign: 'left'
+                size_hint_y: None
+                height: dp(40)
+            
+            MDBoxLayout:
+                orientation: 'horizontal'
+                spacing: dp(20)
+                size_hint_y: None
+                height: dp(60)
+                
+                MDBoxLayout:
+                    orientation: 'vertical'
+                    spacing: dp(5)
+                    
+                    MDLabel:
+                        text: "Indexed Files"
+                        font_style: 'Caption'
+                        theme_text_color: "Secondary"
+                    
+                    MDLabel:
+                        id: indexed_files_label
+                        text: "0"
+                        font_style: 'H4'
+                
+                MDBoxLayout:
+                    orientation: 'vertical'
+                    spacing: dp(5)
+                    
+                    MDLabel:
+                        text: "Auto-Indexing"
+                        font_style: 'Caption'
+                        theme_text_color: "Secondary"
+                    
+                    MDBoxLayout:
+                        orientation: 'horizontal'
+                        spacing: dp(5)
+                        size_hint_y: None
+                        height: dp(20)
+                        
+                        MDCircularProgressBar:
+                            id: auto_indexing_progress
+                            value: 82
+                            size: dp(20)
+                            size_hint: None, None
+                            width: dp(20)
+                            height: dp(20)
+                        
+                        MDLabel:
+                            id: auto_indexing_percent
+                            text: "82%"
+                            font_style: 'Caption'
+            
+            MDLabel:
+                id: processing_file_label
+                text: "Processing 'Deep_Learning_ML_2.pdf'"
+                font_style: 'Caption'
+                theme_text_color: "Secondary"
+                halign: 'left'
+                size_hint_y: None
+                height: dp(20)
+            
+            MDRaisedButton:
+                text: "View Graph"
+                size_hint: 0.4, None
+                height: dp(40)
+                on_press: root.view_graph()
+                pos_hint: {'center_x': 0.5}
+                elevation: 2
+        
+        # Active Knowledge Silos Section
+        MDLabel:
+            text: "Active Knowledge Silos"
+            font_style: 'H6'
+            halign: 'left'
+            padding: dp(10), dp(0)
+            size_hint_y: None
+            height: dp(40)
+        
+        ScrollView:
+            id: scroll_view
+            bar_width: dp(5)
+            bar_color: 33/255, 150/255, 243/255, 0.5
+            bar_inactive_color: 33/255, 150/255, 243/255, 0.2
+            scroll_type: ['bars', 'content']
+            
+            MDBoxLayout:
+                id: silo_list
+                orientation: 'vertical'
+                padding: dp(10)
+                spacing: dp(10)
+                size_hint_y: None
+                height: max(self.minimum_height, root.height - dp(450))
+                adaptive_height: True
+        
+        # Import Source Section
+        MDLabel:
+            text: "Import Source"
+            font_style: 'H6'
+            halign: 'left'
+            padding: dp(10), dp(0)
+            size_hint_y: None
+            height: dp(40)
+        
+        MDBoxLayout:
+            orientation: 'horizontal'
+            padding: dp(10)
+            spacing: dp(10)
+            size_hint_y: None
+            height: dp(80)
+            
+            MDCard:
+                orientation: 'vertical'
+                padding: dp(10)
+                spacing: dp(5)
+                radius: dp(12)
+                elevation: 1
+                md_bg_color: 0.15, 0.15, 0.15, 0.6
+                size_hint_x: 0.45
+                
+                MDIcon:
+                    icon: "folder"
+                    size: "24sp"
+                    theme_text_color: "Primary"
+                    halign: 'center'
+                    pos_hint: {'center_x': 0.5}
+                
+                MDLabel:
+                    text: "Local Folder"
+                    font_style: 'Caption'
+                    halign: 'center'
+                
+                MDLabel:
+                    text: "PDF Docs"
+                    font_style: 'Caption'
+                    theme_text_color: "Secondary"
+                    halign: 'center'
+                
+                MDRaisedButton:
+                    text: "Browse"
+                    size_hint: 0.8, None
+                    height: dp(30)
+                    on_press: root.index_folder()
+                    pos_hint: {'center_x': 0.5}
+                    elevation: 2
+            
+            MDCard:
+                orientation: 'vertical'
+                padding: dp(10)
+                spacing: dp(5)
+                radius: dp(12)
+                elevation: 1
+                md_bg_color: 0.15, 0.15, 0.15, 0.6
+                size_hint_x: 0.45
+                
+                MDIcon:
+                    icon: "markdown"
+                    size: "24sp"
+                    theme_text_color: "Primary"
+                    halign: 'center'
+                    pos_hint: {'center_x': 0.5}
+                
+                MDLabel:
+                    text: "Markdown"
+                    font_style: 'Caption'
+                    halign: 'center'
+                
+                MDLabel:
+                    text: "UPL/HTS"
+                    font_style: 'Caption'
+                    theme_text_color: "Secondary"
+                    halign: 'center'
+                
+                MDRaisedButton:
+                    text: "Import"
+                    size_hint: 0.8, None
+                    height: dp(30)
+                    on_press: root.import_markdown()
+                    pos_hint: {'center_x': 0.5}
+                    elevation: 2
+        
+        # Auto-Indexing Toggle
+        MDBoxLayout:
+            orientation: 'horizontal'
+            padding: dp(10)
+            spacing: dp(10)
+            size_hint_y: None
+            height: dp(40)
+            
+            MDLabel:
+                text: "Auto-Indexing"
+                font_style: 'Body1'
+                halign: 'left'
+            
+            MDIconButton:
+                icon: "toggle-switch"
+                theme_text_color: "Primary"
+                on_press: root.toggle_auto_indexing()
+        
+        # Status bar
+        MDBoxLayout:
+            orientation: 'horizontal'
+            padding: dp(10)
+            spacing: dp(10)
+            size_hint_y: None
+            height: dp(40)
+            
+            MDLabel:
+                id: status_label
+                text: "0 items • 0 silos"
+                halign: 'left'
+                font_style: 'Caption'
+                theme_text_color: "Secondary"
+            
+            MDProgressBar:
+                id: indexing_progress
+                value: 0
+                size_hint_x: 0.7
+        
+        # Action buttons
+        MDBoxLayout:
+            orientation: 'horizontal'
+            padding: dp(10)
+            spacing: dp(10)
+            size_hint_y: None
+            height: dp(60)
+            
+            MDRaisedButton:
+                text: "New Silo"
+                icon: "plus"
+                on_press: root.create_silo()
+                size_hint_x: 0.48
+                elevation: 2
+                
+            MDRaisedButton:
+                text: "Clear All"
+                icon: "delete"
+                on_press: root.clear_knowledge_base()
+                size_hint_x: 0.48
+                elevation: 2
