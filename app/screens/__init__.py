@@ -10,6 +10,7 @@ from .chat import ChatScreen
 from .documents import DocumentsScreen
 from .vision import VisionScreen
 from .knowledge import KnowledgeScreen
+from .models import ModelsScreen
 
-__all__ = ['ChatScreen', 'DocumentsScreen', 'VisionScreen', 'KnowledgeScreen']
+__all__ = ['ChatScreen', 'DocumentsScreen', 'VisionScreen', 'KnowledgeScreen', 'ModelsScreen']
 __version__ = '1.0.0'
