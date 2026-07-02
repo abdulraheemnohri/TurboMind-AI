@@ -7,6 +7,7 @@ Contains all screen classes for the app.
 """
 
 from .chat import ChatScreen
+from .documents import DocumentsScreen
 
-__all__ = ['ChatScreen']
+__all__ = ['ChatScreen', 'DocumentsScreen']
 __version__ = '1.0.0'
