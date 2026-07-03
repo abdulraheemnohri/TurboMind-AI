@@ -1,5 +1,6 @@
 # TurboMind AI - Python Dependencies
 # 100% Offline Android AI Assistant
+# Install with: pip install -r requirements.txt
 
 # Core AI/ML dependencies
 numpy>=1.24.0
@@ -8,37 +9,52 @@ transformers>=4.30.0
 sentencepiece>=0.1.99
 scipy>=1.10.0
 
-# Kivy for UI
+# Kivy for UI (required)
 kivy>=2.1.0
 kivymd>=1.1.1
 
-# System monitoring
+# System monitoring (required)
 psutil>=5.9.0
 
-# For document processing
-PyPDF2>=3.0.0
-python-docx>=0.8.11
-pillow>=9.5.0
-
-# For OCR (optional - choose one)
-# pytesseract>=0.3.10
+# OCR dependencies (choose at least one)
+# Tesseract (recommended for desktop)
+pytesseract>=0.3.10
+# EasyOCR (requires internet for first download)
 # easyocr>=1.7.1
+# PaddleOCR (requires paddlepaddle)
 # paddleocr>=2.7.0.3
+# OpenCV for image processing
+opencv-python-headless>=4.8.0.74
+Pillow>=9.5.0
 
-# For vector search
-faiss-cpu>=1.7.4
-
-# For speech recognition (optional - offline)
+# Voice dependencies (choose at least one)
+# VOSK for offline speech recognition (requires model download)
 # vosk>=0.3.45
+# PyAudio for microphone access
+# pyaudio>=0.2.13
 
-# For text-to-speech (optional - offline)
+# Text-to-Speech (offline)
 # pyttsx3>=2.90
 
-# For audio processing
-# pydub>=0.25.1
+# PDF processing
+PyPDF2>=3.0.0
+# or use pymupdf for better PDF handling
+# pymupdf>=1.23.5
 
-# For better tokenization
+# Document processing
+python-docx>=0.8.11
+
+# Vector search (for semantic search)
+faiss-cpu>=1.7.4
+
+# Tokenization
 tokenizers>=0.13.3
 
 # For acceleration (optional)
 accelerate>=0.20.0
+
+# For Android build
+# buildozer>=1.5.0
+
+# For testing
+# pytest>=7.4.0
