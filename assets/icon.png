@@ -1,17 +1,1 @@
-TurboMind AI App Icon
-======================
-
-This file should be replaced with an actual icon.png file.
-
-Requirements:
-- Size: 512x512 pixels
-- Format: PNG
-- Transparent background recommended
-- Name: icon.png
-
-To add your icon:
-1. Create icon.png (512x512)
-2. Replace this file with your icon.png
-3. Update buildozer.spec: icon.filename = assets/icon.png
-
-For now, this is a placeholder.
+iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==

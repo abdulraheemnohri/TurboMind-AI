@@ -1,17 +1,1 @@
-TurboMind AI Splash Screen
-==========================
-
-This file should be replaced with an actual splash.png file.
-
-Requirements:
-- Size: 1024x1024 pixels
-- Format: PNG
-- Should display app name and loading indicator
-- Name: splash.png
-
-To add your splash screen:
-1. Create splash.png (1024x1024)
-2. Replace this file with your splash.png
-3. Update buildozer.spec: presplash.filename = assets/splash.png
-
-For now, this is a placeholder.
+iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==
