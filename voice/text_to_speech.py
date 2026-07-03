@@ -3,25 +3,26 @@
 """
 TurboMind AI - Text to Speech
 =============================
-Converts text to speech using offline models
+Converts text to speech using offline models (pyttsx3)
 """
 
+import os
+import time
+import wave
+import tempfile
 from pathlib import Path
 from typing import Dict, Any, List, Optional, Tuple
 from dataclasses import dataclass, field
-import time
 import numpy as np
-import wave
-import contextlib
 
 
 @dataclass
 class TTSConfig:
     """Configuration for text to speech"""
-    voice: str = "female"  # male, female, child
-    rate: int = 22050  # sample rate
+    voice: str = "female"  # male, female, child, robot
+    rate: int = 200  # words per minute
     volume: float = 1.0  # 0.0 to 1.0
-    pitch: float = 1.0  # 0.5 to 2.0
+    pitch: float = 1.0  # pitch variation
     language: str = "en"
     
     def to_dict(self) -> Dict[str, Any]:
@@ -67,6 +68,7 @@ class AudioOutput:
 class TextToSpeech:
     """
     Converts text to speech using offline models.
+    Uses pyttsx3 for offline TTS (no internet required).
     Supports multiple voices and languages.
     """
     
@@ -99,54 +101,81 @@ class TextToSpeech:
         Initialize the text to speech engine.
         
         Args:
-            model_path: Path to offline TTS model
+            model_path: Path to offline TTS model (not used for pyttsx3)
         """
         self.model_path = Path(model_path) if model_path else None
         self.is_loaded = False
         self.current_voice = 'female'
         self.current_language = 'en'
         self.config = TTSConfig()
+        self.engine = None
+        self.voices = []
         
-        # Model state
-        self.model = None
-        self.vocoder = None
-        
+        # Try to initialize pyttsx3
+        self._init_pyttsx3()
         print("🔊 Text to Speech initialized")
+    
+    def _init_pyttsx3(self) -> bool:
+        """Initialize pyttsx3 engine"""
+        try:
+            import pyttsx3
+            self.engine = pyttsx3.init()
+            
+            # Get available voices
+            self.voices = self.engine.getProperty('voices')
+            
+            # Set default voice
+            if self.voices:
+                # Try to find a female voice
+                for voice in self.voices:
+                    if 'female' in voice.name.lower() or 'woman' in voice.name.lower():
+                        self.engine.setProperty('voice', voice.id)
+                        break
+                else:
+                    self.engine.setProperty('voice', self.voices[0].id)
+            
+            self.is_loaded = True
+            print("✅ pyttsx3 engine initialized")
+            return True
+            
+        except ImportError:
+            print("⚠️  pyttsx3 not installed. Install with: pip install pyttsx3")
+            print("⚠️  Falling back to simulated TTS")
+            self.is_loaded = False
+            return False
+        except Exception as e:
+            print(f"❌ Error initializing pyttsx3: {e}")
+            print("⚠️  Falling back to simulated TTS")
+            self.is_loaded = False
+            return False
     
     def load_model(self, model_path: Optional[str] = None) -> bool:
         """
         Load text to speech model.
+        For pyttsx3, this just initializes the engine.
         
         Args:
-            model_path: Path to model file
+            model_path: Path to model file (not used for pyttsx3)
             
         Returns:
             True if model loaded successfully
         """
-        try:
-            if model_path:
-                self.model_path = Path(model_path)
-            
-            # In a real implementation, would load actual model
-            # For demo, just mark as loaded
-            self.is_loaded = True
-            print(f"✅ Text to speech model loaded")
-            return True
-            
-        except Exception as e:
-            print(f"❌ Error loading TTS model: {e}")
-            return False
+        if model_path:
+            self.model_path = Path(model_path)
+        
+        return self._init_pyttsx3()
     
     def unload_model(self) -> bool:
         """Unload text to speech model"""
         try:
-            # In a real implementation, would unload model
+            if self.engine:
+                self.engine.stop()
             self.is_loaded = False
-            self.model = None
-            print("🗑️  Text to speech model unloaded")
+            self.engine = None
+            print("🗑️  Text to speech engine stopped")
             return True
         except Exception as e:
-            print(f"❌ Error unloading model: {e}")
+            print(f"❌ Error unloading TTS: {e}")
             return False
     
     def set_voice(self, voice: str) -> bool:
@@ -154,23 +183,58 @@ class TextToSpeech:
         Set the voice for speech synthesis.
         
         Args:
-            voice: Voice name (male, female, child, robot)
+            voice: Voice name (male, female, child, robot) or voice ID
             
         Returns:
             True if voice is supported
         """
-        if voice in self.SUPPORTED_VOICES:
-            self.current_voice = voice
-            self.config.voice = voice
-            print(f"🎭 Voice set to: {self.SUPPORTED_VOICES[voice]}")
-            return True
+        if not self.is_loaded or not self.engine:
+            print("❌ TTS engine not loaded")
+            return False
         
-        print(f"❌ Unsupported voice: {voice}")
-        return False
+        try:
+            if voice in self.SUPPORTED_VOICES:
+                # Find matching voice
+                for v in self.voices:
+                    name_lower = v.name.lower()
+                    if voice == 'male' and ('male' in name_lower or 'man' in name_lower):
+                        self.engine.setProperty('voice', v.id)
+                        self.current_voice = voice
+                        self.config.voice = voice
+                        print(f"🎭 Voice set to: {self.SUPPORTED_VOICES[voice]}")
+                        return True
+                    elif voice == 'female' and ('female' in name_lower or 'woman' in name_lower):
+                        self.engine.setProperty('voice', v.id)
+                        self.current_voice = voice
+                        self.config.voice = voice
+                        print(f"🎭 Voice set to: {self.SUPPORTED_VOICES[voice]}")
+                        return True
+                    elif voice == 'child' and 'child' in name_lower:
+                        self.engine.setProperty('voice', v.id)
+                        self.current_voice = voice
+                        self.config.voice = voice
+                        print(f"🎭 Voice set to: {self.SUPPORTED_VOICES[voice]}")
+                        return True
+                
+                # If no specific voice found, use first available
+                self.engine.setProperty('voice', self.voices[0].id)
+                print(f"⚠️  Voice type '{voice}' not found, using default")
+                return True
+            else:
+                # Assume it's a voice ID
+                self.engine.setProperty('voice', voice)
+                self.current_voice = voice
+                print(f"🎭 Voice set to ID: {voice}")
+                return True
+                
+        except Exception as e:
+            print(f"❌ Error setting voice: {e}")
+            return False
     
     def set_language(self, language_code: str) -> bool:
         """
         Set the language for speech synthesis.
+        Note: Language support depends on installed voices.
         
         Args:
             language_code: Language code (e.g., 'en', 'ur', 'hi')
@@ -188,8 +252,23 @@ class TextToSpeech:
         return False
     
     def get_supported_voices(self) -> Dict[str, str]:
-        """Get list of supported voices"""
+        """Get list of supported voice types"""
         return self.SUPPORTED_VOICES.copy()
+    
+    def get_available_voices(self) -> List[Dict[str, Any]]:
+        """Get list of available voices from the engine"""
+        if not self.voices:
+            return []
+        
+        return [
+            {
+                'id': voice.id,
+                'name': voice.name,
+                'languages': voice.languages,
+                'gender': getattr(voice, 'gender', 'unknown')
+            }
+            for voice in self.voices
+        ]
     
     def get_supported_languages(self) -> Dict[str, str]:
         """Get list of supported languages"""
@@ -205,8 +284,8 @@ class TextToSpeech:
         Returns:
             AudioOutput or None if synthesis failed
         """
-        if not self.is_loaded:
-            print("❌ Model not loaded")
+        if not self.is_loaded or not self.engine:
+            print("❌ TTS engine not loaded")
             return None
         
         if not text or not text.strip():
@@ -216,36 +295,68 @@ class TextToSpeech:
         try:
             start_time = time.time()
             
-            # In a real implementation, would synthesize with model
-            # For demo, generate simulated audio
-            sample_rate = self.config.rate
-            duration = len(text) * 0.1  # Rough estimate: 100ms per character
-            samples = int(duration * sample_rate)
+            # Save to temporary file
+            with tempfile.NamedTemporaryFile(suffix='.wav', delete=False) as temp_file:
+                temp_path = temp_file.name
             
-            # Generate audio data (simulated speech waveform)
-            t = np.linspace(0, duration, samples)
-            
-            # Create a simple waveform that sounds like speech
-            frequency = 220  # Base frequency
-            audio_data = np.sin(2 * np.pi * frequency * t) * 32767 * 0.5
-            
-            # Add some variation to make it sound more like speech
-            audio_data = audio_data.astype(np.int16)
-            
-            elapsed = time.time() - start_time
-            
-            output = AudioOutput(
-                audio_data=audio_data,
-                sample_rate=sample_rate,
-                duration=duration
-            )
-            
-            print(f"🔊 Synthesized: {text[:50]}...")
-            return output
-            
+            try:
+                # Set properties
+                self.engine.setProperty('rate', self.config.rate)
+                self.engine.setProperty('volume', self.config.volume)
+                
+                # Save to file
+                self.engine.save_to_file(text, temp_path)
+                self.engine.runAndWait()
+                
+                # Read the generated audio file
+                with wave.open(temp_path, 'rb') as wav_file:
+                    sample_rate = wav_file.getframerate()
+                    n_frames = wav_file.getnframes()
+                    audio_data = wav_file.readframes(n_frames)
+                    
+                    # Convert to numpy array
+                    audio_np = np.frombuffer(audio_data, dtype=np.int16)
+                    duration = n_frames / float(sample_rate)
+                
+                elapsed = time.time() - start_time
+                
+                output = AudioOutput(
+                    audio_data=audio_np,
+                    sample_rate=sample_rate,
+                    duration=duration
+                )
+                
+                print(f"🔊 Synthesized: {text[:50]}...")
+                return output
+                
+            finally:
+                # Clean up
+                try:
+                    os.unlink(temp_path)
+                except:
+                    pass
+                    
         except Exception as e:
             print(f"❌ Synthesis error: {e}")
-            return None
+            # Fallback to simulated audio
+            return self._generate_simulated_audio(text)
+    
+    def _generate_simulated_audio(self, text: str) -> AudioOutput:
+        """Generate simulated audio when pyttsx3 fails"""
+        sample_rate = 22050
+        duration = len(text) * 0.1  # 100ms per character
+        samples = int(duration * sample_rate)
+        
+        # Generate a simple tone
+        t = np.linspace(0, duration, samples)
+        frequency = 440  # A4 note
+        audio_data = (np.sin(2 * np.pi * frequency * t) * 32767 * 0.5).astype(np.int16)
+        
+        return AudioOutput(
+            audio_data=audio_data,
+            sample_rate=sample_rate,
+            duration=duration
+        )
     
     def speak(self, text: str, play: bool = True) -> Optional[AudioOutput]:
         """
@@ -258,106 +369,61 @@ class TextToSpeech:
         Returns:
             AudioOutput or None if failed
         """
-        output = self.synthesize(text)
+        if not self.is_loaded or not self.engine:
+            print("❌ TTS engine not loaded")
+            return None
         
-        if output and play:
-            self.play_audio(output)
-        
-        return output
-    
-    def play_audio(self, audio_output: AudioOutput) -> bool:
-        """
-        Play audio output.
-        
-        Args:
-            audio_output: AudioOutput to play
-            
-        Returns:
-            True if audio played successfully
-        """
         try:
-            # In a real implementation, would play audio
-            # For demo, just simulate playing
-            print(f"🎵 Playing audio ({audio_output.duration:.2f}s)")
+            if play:
+                # Speak directly
+                self.engine.say(text)
+                self.engine.runAndWait()
             
-            # Simulate playback time
-            import time
-            time.sleep(audio_output.duration * 0.1)  # Shortened for demo
-            
-            return True
+            # Also return the audio output
+            return self.synthesize(text)
             
         except Exception as e:
-            print(f"❌ Playback error: {e}")
-            return False
+            print(f"❌ Error speaking text: {e}")
+            return None
     
-    def save_to_file(self, text: str, file_path: str) -> bool:
-        """
-        Synthesize text and save to audio file.
-        
-        Args:
-            text: Text to synthesize
-            file_path: Path to save audio file
-            
-        Returns:
-            True if saved successfully
-        """
-        output = self.synthesize(text)
-        
-        if output:
-            return output.save_to_file(file_path)
-        
+    def stop(self) -> bool:
+        """Stop current speech"""
+        if self.engine:
+            try:
+                self.engine.stop()
+                return True
+            except:
+                pass
         return False
     
-    def set_config(self, config: TTSConfig) -> None:
-        """Set TTS configuration"""
-        self.config = config
-        print("⚙️  TTS configuration updated")
+    def is_speaking(self) -> bool:
+        """Check if TTS is currently speaking"""
+        if self.engine:
+            return self.engine._inLoop
+        return False
     
-    def get_config(self) -> TTSConfig:
-        """Get current TTS configuration"""
-        return self.config
+    def set_rate(self, rate: int) -> bool:
+        """Set speech rate (words per minute)"""
+        if self.engine:
+            self.engine.setProperty('rate', rate)
+            self.config.rate = rate
+            return True
+        return False
     
-    def is_model_loaded(self) -> bool:
-        """Check if model is loaded"""
-        return self.is_loaded
+    def set_volume(self, volume: float) -> bool:
+        """Set volume (0.0 to 1.0)"""
+        if 0.0 <= volume <= 1.0 and self.engine:
+            self.engine.setProperty('volume', volume)
+            self.config.volume = volume
+            return True
+        return False
     
     def get_model_info(self) -> Dict[str, Any]:
-        """Get information about the loaded model"""
+        """Get information about the TTS engine"""
         return {
-            'model_path': str(self.model_path) if self.model_path else None,
+            'engine': 'pyttsx3' if self.engine else 'none',
             'is_loaded': self.is_loaded,
             'current_voice': self.current_voice,
             'current_language': self.current_language,
-            'supported_voices': list(self.SUPPORTED_VOICES.keys()),
-            'supported_languages': list(self.SUPPORTED_LANGUAGES.keys())
+            'available_voices': len(self.voices)
         }
-    
-    def test_speakers(self) -> bool:
-        """
-        Test speaker functionality.
-        
-        Returns:
-            True if speakers are working
-        """
-        try:
-            # In a real implementation, would test speakers
-            print("🔊 Speaker test: OK")
-            return True
-        except Exception as e:
-            print(f"❌ Speaker test failed: {e}")
-            return False
-    
-    def stop_speaking(self) -> bool:
-        """Stop current speech"""
-        print("🛑 Speech stopped")
-        return True
-    
-    def pause_speaking(self) -> bool:
-        """Pause current speech"""
-        print("⏸️  Speech paused")
-        return True
-    
-    def resume_speaking(self) -> bool:
-        """Resume paused speech"""
-        print("▶️ Speech resumed")
-        return True
