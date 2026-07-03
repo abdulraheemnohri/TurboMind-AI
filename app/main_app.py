@@ -10,7 +10,6 @@ from kivy.lang import Builder
 from kivy.utils import platform
 from kivymd.app import MDApp
 from kivymd.uix.screenmanager import MDScreenManager
-from kivymd.uix.screen import MDScreen
 
 # Import all screens from app.screens
 from app.screens.home import HomeScreen
