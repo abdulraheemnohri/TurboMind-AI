@@ -13,14 +13,11 @@
  # (list) Source files to include (let empty to include all the files)
  source.include_exts = py,png,jpg,kv,atlas,ttf,otf,woff,woff2
  
- # (list) List of inclusions using pattern matching
- #source.include_patterns = assets/*,images/*.png
- 
  # (list) Source files to exclude (let empty to not exclude anything)
- #source.exclude_exts = spec
+ source.exclude_exts = spec
  
  # (list) List of directory to exclude (let empty to not exclude anything)
- source.exclude_dirs = tests, __pycache__, .git, docs, venv
+ source.exclude_dirs = tests, __pycache__, .git, docs, venv, .venv
  
  # (list) List of exclusions using pattern matching
  #source.exclude_patterns = license,images/*/*.jpg
@@ -33,7 +30,7 @@
  # version.filename = %(source.dir)s/main.py
  
  # (list) Application requirements
- requirements = python3,kivy>=2.1.0,kivymd>=1.1.1,numpy>=1.24.0,torch>=2.0.0,transformers>=4.30.0,psutil,scipy,sentencepiece
+ requirements = python3,kivy>=2.1.0,kivymd>=1.1.1,numpy>=1.24.0,torch>=2.0.0,transformers>=4.30.0,psutil>=5.9.0,opencv-python-headless>=4.8.0.74,Pillow>=9.5.0,PyPDF2>=3.0.0,python-docx>=0.8.11
  
  # (str) Custom source folders for requirements
  #requirements.source = 
@@ -42,10 +39,11 @@
  #garden_requirements = 
  
  # (str) Presplash of the application
- #presplash.filename = %(source.dir)s/data/presplash.png
+ presplash.filename = assets/splash.png
+ presplash.color = 000000
  
  # (str) Icon of the application
- #icon.filename = %(source.dir)s/data/icon.png
+ icon.filename = assets/icon.png
  
  # (str) Supported orientation (one of landscape, portrait or all)
  orientation = portrait
@@ -105,7 +103,7 @@
  #android.add_libs_x86_64 = libs/android/*.so
  
  # (bool) Indicate whether the screen should stay on
- #android.wakelock = False
+ android.wakelock = False
  
  # (list) Android application meta-data to set (key=value format)
  #android.meta_data = 
@@ -189,3 +187,39 @@
  
  # (bool) Use Android Studio project to build the application
  #android.use_android_studio = False
+ 
+ # (str) Android NDK directory for custom activity
+ #android.custom_activity_ndk_path = 
+ 
+ # (bool) Use --private data storage (True) or --dir public storage (False)
+ android.private_storage = True
+ 
+ # (bool) Use --dir public storage (True) or --private data storage (False)
+ #android.public_storage = False
+ 
+ # (str) Android manifest file to use
+ #android.manifest = android/manifest.xml
+ 
+ # (str) Android permissions to request
+ android.permissions = INTERNET,ACCESS_NETWORK_STATE,VIBRATE,RECORD_AUDIO,MODIFY_AUDIO_SETTINGS,READ_EXTERNAL_STORAGE,WRITE_EXTERNAL_STORAGE
+ 
+ # (str) Android API key to use for Google services
+ #android.api_key = 
+ 
+ # (str) Android package name
+ #android.package_name = 
+ 
+ # (str) Android certificate keystore file
+ #android.keystore_file = 
+ 
+ # (str) Android certificate keystore password
+ #android.keystore_password = 
+ 
+ # (str) Android certificate keystore alias
+ #android.keystore_alias = 
+ 
+ # (str) Android certificate keystore alias password
+ #android.keystore_alias_password = 
+ 
+ # (bool) Enable Android debug mode
+ android.debug = True
