@@ -1,0 +1,10 @@
+TurboMind AI Splash Screen
+This is a placeholder for the actual splash screen.
+Recommended size: 1024x1024 pixels
+Format: PNG
+Name: splash.png
+
+To add your splash screen:
+1. Create a 1024x1024 PNG file named splash.png
+2. Place it in the assets/ directory
+3. Update buildozer.spec to use this file
