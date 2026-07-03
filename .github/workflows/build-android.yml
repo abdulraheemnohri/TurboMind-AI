@@ -27,6 +27,7 @@ jobs:
           openjdk-17-jdk \
           unzip \
           autoconf \
+          autoconf-archive \
           automake \
           libtool \
           libtool-bin \
