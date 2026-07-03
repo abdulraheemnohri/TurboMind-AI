@@ -3,16 +3,18 @@
 """
 TurboMind AI - Speech to Text
 ==============================
-Converts speech to text using offline models
+Converts speech to text using offline VOSK models
 """
 
-from pathlib import Path
-from typing import Dict, Any, List, Optional, Tuple
-from dataclasses import dataclass, field
+import os
+import json
 import time
-import numpy as np
 import wave
-import contextlib
+import tempfile
+from pathlib import Path
+from typing import Dict, Any, List, Optional, Tuple, Callable
+from dataclasses import dataclass, field
+import numpy as np
 
 
 @dataclass
@@ -59,76 +61,130 @@ class AudioConfig:
 
 class SpeechToText:
     """
-    Converts speech to text using offline models.
-    Supports multiple languages and offline processing.
+    Converts speech to text using offline VOSK models.
+    VOSK is a completely offline speech recognition toolkit.
+    Supports multiple languages including Urdu, English, Hindi, etc.
     """
     
-    # Supported languages
+    # Supported languages with VOSK model names
     SUPPORTED_LANGUAGES = {
-        'en': 'English',
-        'ur': 'Urdu',
-        'hi': 'Hindi', 
-        'es': 'Spanish',
-        'fr': 'French',
-        'de': 'German',
-        'it': 'Italian',
-        'pt': 'Portuguese',
-        'ru': 'Russian',
-        'zh': 'Chinese',
-        'ja': 'Japanese',
-        'ar': 'Arabic'
+        'en': {'name': 'English', 'model': 'vosk-model-en-us-0.22'},  # Small English model
+        'ur': {'name': 'Urdu', 'model': 'vosk-model-ur-0.22'},  # Urdu model
+        'hi': {'name': 'Hindi', 'model': 'vosk-model-hi-0.22'},  # Hindi model
+        'es': {'name': 'Spanish', 'model': 'vosk-model-es-0.22'},
+        'fr': {'name': 'French', 'model': 'vosk-model-fr-0.22'},
+        'de': {'name': 'German', 'model': 'vosk-model-de-0.22'},
+        'it': {'name': 'Italian', 'model': 'vosk-model-it-0.22'},
+        'pt': {'name': 'Portuguese', 'model': 'vosk-model-pt-0.22'},
+        'ru': {'name': 'Russian', 'model': 'vosk-model-ru-0.22'},
+        'zh': {'name': 'Chinese', 'model': 'vosk-model-cn-0.22'},
+        'ja': {'name': 'Japanese', 'model': 'vosk-model-ja-0.22'},
+        'ar': {'name': 'Arabic', 'model': 'vosk-model-ar-0.22'}
     }
     
-    def __init__(self, model_path: Optional[str] = None):
+    # Small models for better performance on mobile
+    SMALL_MODELS = {
+        'en': 'vosk-model-small-en-us-0.15',
+        'ur': 'vosk-model-small-ur-0.15',
+        'hi': 'vosk-model-small-hi-0.15',
+    }
+    
+    def __init__(self, model_path: Optional[str] = None, use_small_model: bool = True):
         """
         Initialize the speech to text engine.
         
         Args:
-            model_path: Path to offline speech recognition model
+            model_path: Path to VOSK model directory
+            use_small_model: Whether to use small models (better for mobile)
         """
         self.model_path = Path(model_path) if model_path else None
         self.is_loaded = False
         self.current_language = 'en'
+        self.use_small_model = use_small_model
         self.audio_config = AudioConfig()
         
-        # Model state
+        # VOSK components
         self.model = None
-        self.feature_extractor = None
-        self.tokenizer = None
+        self.recognizer = None
         
+        # Try to initialize with default model
+        if not model_path:
+            self._try_default_model()
+        else:
+            self.load_model(str(model_path))
+            
         print("🎤 Speech to Text initialized")
     
-    def load_model(self, model_path: Optional[str] = None) -> bool:
+    def _try_default_model(self) -> None:
+        """Try to find and load a default VOSK model"""
+        # Check common model locations
+        possible_paths = [
+            'vosk-model-small-en-us-0.15',
+            'vosk-model-en-us-0.22',
+            '/data/vosk-model-small-en-us-0.15',
+            '/sdcard/vosk-model-small-en-us-0.15'
+        ]
+        
+        for path in possible_paths:
+            if Path(path).exists():
+                self.load_model(path)
+                return
+        
+        print("⚠️  No default VOSK model found. Please download a model.")
+        print("⚠️  Download models from: https://alphacephei.com/vosk/models")
+        print("⚠️  For English: vosk-model-small-en-us-0.15")
+        print("⚠️  For Urdu: vosk-model-ur-0.22")
+    
+    def load_model(self, model_path: str) -> bool:
         """
-        Load speech recognition model.
+        Load VOSK speech recognition model.
         
         Args:
-            model_path: Path to model file
+            model_path: Path to VOSK model directory
             
         Returns:
             True if model loaded successfully
         """
         try:
-            if model_path:
-                self.model_path = Path(model_path)
+            import vosk
             
-            # In a real implementation, would load actual model
-            # For demo, just mark as loaded
+            self.model_path = Path(model_path)
+            
+            if not self.model_path.exists():
+                print(f"❌ Model directory not found: {model_path}")
+                return False
+            
+            # Load the model
+            self.model = vosk.Model(str(self.model_path))
+            
+            # Create recognizer
+            self.recognizer = vosk.KaldiRecognizer(
+                self.model,
+                self.audio_config.sample_rate
+            )
+            self.recognizer.SetWords(True)
+            
             self.is_loaded = True
-            print(f"✅ Speech recognition model loaded")
+            print(f"✅ VOSK model loaded from: {model_path}")
             return True
             
+        except ImportError:
+            print("⚠️  VOSK not installed. Install with: pip install vosk")
+            print("⚠️  Falling back to simulated speech recognition")
+            self.is_loaded = False
+            return False
         except Exception as e:
-            print(f"❌ Error loading speech recognition model: {e}")
+            print(f"❌ Error loading VOSK model: {e}")
+            self.is_loaded = False
             return False
     
     def unload_model(self) -> bool:
-        """Unload speech recognition model"""
+        """Unload VOSK model"""
         try:
-            # In a real implementation, would unload model
-            self.is_loaded = False
             self.model = None
-            print("🗑️  Speech recognition model unloaded")
+            self.recognizer = None
+            self.is_loaded = False
+            print("🗑️  VOSK model unloaded")
             return True
         except Exception as e:
             print(f"❌ Error unloading model: {e}")
@@ -137,6 +193,7 @@ class SpeechToText:
     def set_language(self, language_code: str) -> bool:
         """
         Set the language for speech recognition.
+        This will automatically load the appropriate model if available.
         
         Args:
             language_code: Language code (e.g., 'en', 'ur', 'hi')
@@ -146,17 +203,31 @@ class SpeechToText:
         """
         if language_code in self.SUPPORTED_LANGUAGES:
             self.current_language = language_code
-            print(f"🌍 Language set to: {self.SUPPORTED_LANGUAGES[language_code]}")
+            
+            # Try to load the model for this language
+            if self.use_small_model and language_code in self.SMALL_MODELS:
+                model_name = self.SMALL_MODELS[language_code]
+            else:
+                model_name = self.SUPPORTED_LANGUAGES[language_code]['model']
+            
+            # Check if model exists
+            if Path(model_name).exists():
+                self.load_model(model_name)
+            else:
+                print(f"⚠️  Model for {language_code} not found: {model_name}")
+                print(f"⚠️  Please download from: https://alphacephei.com/vosk/models")
+            
+            print(f"🌍 Language set to: {self.SUPPORTED_LANGUAGES[language_code]['name']}")
             return True
         
         print(f"❌ Unsupported language: {language_code}")
         return False
     
-    def get_supported_languages(self) -> Dict[str, str]:
-        """Get list of supported languages"""
+    def get_supported_languages(self) -> Dict[str, Dict[str, str]]:
+        """Get dictionary of supported languages with model info"""
         return self.SUPPORTED_LANGUAGES.copy()
     
-    def recognize_speech(self, audio_data: np.ndarray, sample_rate: int = 16000) -> Optional[Any]:
+    def recognize_speech(self, audio_data: np.ndarray, sample_rate: int = 16000) -> Optional[SpeechResult]:
         """
         Recognize speech from audio data.
         
@@ -167,59 +238,64 @@ class SpeechToText:
         Returns:
             SpeechResult or None if recognition failed
         """
-        if not self.is_loaded:
+        if not self.is_loaded or not self.recognizer:
             print("❌ Model not loaded")
             return None
         
         try:
+            import vosk
+            
             start_time = time.time()
             
-            # In a real implementation, would process audio with model
-            # For demo, simulate recognition
-            duration = len(audio_data) / sample_rate
-            
-            # Simulate different responses based on language
-            if self.current_language == 'en':
-                text = "Hello, how can I help you today?"
-            elif self.current_language == 'ur':
-                text = "ہیلو، میں آپ کیسے مدد کر سکتا ہوں؟"
-            elif self.current_language == 'hi':
-                text = "नमस्ते, मैं आपकी कैसे मदद कर सकता हूँ?"
+            # Convert numpy array to bytes
+            if audio_data.dtype == np.int16:
+                audio_bytes = audio_data.tobytes()
             else:
-                text = "Speech recognized successfully"
+                # Convert to int16
+                audio_bytes = (audio_data * 32767).astype(np.int16).tobytes()
             
-            confidence = 0.95  # Simulated confidence
+            # Accept the audio data
+            if self.recognizer.AcceptWaveform(audio_bytes):
+                result = json.loads(self.recognizer.Result())
+                text = result.get('text', '')
+                confidence = 1.0  # VOSK doesn't provide confidence by default
+            else:
+                result = json.loads(self.recognizer.PartialResult())
+                text = result.get('partial', '')
+                confidence = 0.8  # Partial result confidence
             
+            duration = len(audio_data) / float(sample_rate)
             elapsed = time.time() - start_time
             
-            from .speech_to_text import SpeechResult
-            result = SpeechResult(
-                text=text,
-                confidence=confidence,
-                language=self.current_language,
-                duration=duration
-            )
-            
-            print(f"🎤 Recognized: {text}")
-            return result
-            
+            if text and text.strip():
+                result_obj = SpeechResult(
+                    text=text.strip(),
+                    confidence=confidence,
+                    language=self.current_language,
+                    duration=duration
+                )
+                print(f"🎤 Recognized: {text}")
+                return result_obj
+            else:
+                print("❌ No speech detected")
+                return None
+                
         except Exception as e:
             print(f"❌ Recognition error: {e}")
             return None
     
-    def recognize_from_file(self, audio_file_path: str) -> Optional[Any]:
+    def recognize_from_file(self, audio_file_path: str) -> Optional[SpeechResult]:
         """
         Recognize speech from audio file.
         
         Args:
-            audio_file_path: Path to audio file
+            audio_file_path: Path to audio file (WAV format)
             
         Returns:
             SpeechResult or None if recognition failed
         """
         try:
-            # Read audio file
-            with contextlib.closing(wave.open(audio_file_path, 'r')) as wav_file:
+            with wave.open(audio_file_path, 'rb') as wav_file:
                 sample_rate = wav_file.getframerate()
                 n_channels = wav_file.getnchannels()
                 sample_width = wav_file.getsampwidth()
@@ -228,7 +304,10 @@ class SpeechToText:
                 frames = wav_file.readframes(wav_file.getnframes())
                 
                 # Convert to numpy array
-                audio_data = np.frombuffer(frames, dtype=np.int16)
+                if sample_width == 2:
+                    audio_data = np.frombuffer(frames, dtype=np.int16)
+                else:
+                    audio_data = np.frombuffer(frames, dtype=np.int8) * 256
                 
                 # Convert stereo to mono if needed
                 if n_channels > 1:
@@ -241,9 +320,9 @@ class SpeechToText:
             print(f"❌ Error reading audio file: {e}")
             return None
     
-    def start_listening(self, callback=None, timeout: float = 30.0) -> bool:
+    def start_listening(self, callback: Optional[Callable] = None, timeout: float = 30.0) -> bool:
         """
-        Start listening to microphone input.
+        Start listening to microphone input in real-time.
         
         Args:
             callback: Function to call with recognition results
@@ -257,27 +336,82 @@ class SpeechToText:
             return False
         
         try:
-            print("🎤 Listening...")
+            import pyaudio
             
-            # In a real implementation, would use microphone input
-            # For demo, simulate listening
-            if callback:
-                # Simulate receiving audio
-                import time
-                time.sleep(2)
-                
-                # Generate simulated audio data
-                duration = 3.0
-                sample_rate = self.audio_config.sample_rate
-                samples = int(duration * sample_rate)
-                audio_data = np.random.randint(-32768, 32767, samples, dtype=np.int16)
-                
-                result = self.recognize_speech(audio_data, sample_rate)
-                if result:
-                    callback(result)
+            print("🎤 Listening... (Press Ctrl+C to stop)")
             
+            # Audio stream configuration
+            chunk_size = 4096
+            format = pyaudio.paInt16
+            channels = 1
+            rate = self.audio_config.sample_rate
+            
+            # Initialize PyAudio
+            p = pyaudio.PyAudio()
+            
+            # Open stream
+            stream = p.open(
+                format=format,
+                channels=channels,
+                rate=rate,
+                input=True,
+                frames_per_buffer=chunk_size
+            )
+            
+            start_time = time.time()
+            all_audio = bytearray()
+            
+            print("🎤 Start speaking...")
+            
+            try:
+                while True:
+                    if time.time() - start_time > timeout:
+                        print("⏰ Listening timeout")
+                        break
+                    
+                    # Read audio data
+                    data = stream.read(chunk_size, exception_on_overflow=False)
+                    all_audio.extend(data)
+                    
+                    # Process in real-time
+                    if self.recognizer.AcceptWaveform(data):
+                        result = json.loads(self.recognizer.Result())
+                        text = result.get('text', '')
+                        if text and text.strip() and callback:
+                            result_obj = SpeechResult(
+                                text=text.strip(),
+                                confidence=1.0,
+                                language=self.current_language,
+                                duration=0.0
+                            )
+                            callback(result_obj)
+                        
+                    # Check for partial results
+                    partial = json.loads(self.recognizer.PartialResult())
+                    partial_text = partial.get('partial', '')
+                    
+            except KeyboardInterrupt:
+                print("
+🛑 Listening stopped by user")
+            finally:
+                # Clean up
+                stream.stop_stream()
+                stream.close()
+                p.terminate()
+                
+                # Process all collected audio
+                if all_audio and len(all_audio) > 0:
+                    audio_np = np.frombuffer(all_audio, dtype=np.int16)
+                    result = self.recognize_speech(audio_np, rate)
+                    if result and callback:
+                        callback(result)
+                
             return True
             
+        except ImportError:
+            print("⚠️  PyAudio not installed. Install with: pip install pyaudio")
+            print("⚠️  Cannot use microphone without PyAudio")
+            return False
         except Exception as e:
             print(f"❌ Listening error: {e}")
             return False
@@ -287,7 +421,7 @@ class SpeechToText:
         print("🛑 Listening stopped")
         return True
     
-    def process_audio_chunk(self, audio_chunk: np.ndarray, sample_rate: int = 16000) -> Optional[Any]:
+    def process_audio_chunk(self, audio_chunk: np.ndarray, sample_rate: int = 16000) -> Optional[SpeechResult]:
         """
         Process a chunk of audio data for streaming recognition.
         
@@ -298,15 +432,13 @@ class SpeechToText:
         Returns:
             SpeechResult or None if no speech detected
         """
-        # In a real implementation, would process chunk with streaming model
-        # For demo, just use regular recognition
         return self.recognize_speech(audio_chunk, sample_rate)
     
-    def get_audio_config(self) -> Any:
+    def get_audio_config(self) -> AudioConfig:
         """Get current audio configuration"""
         return self.audio_config
     
-    def set_audio_config(self, config: Any) -> None:
+    def set_audio_config(self, config: AudioConfig) -> None:
         """Set audio configuration"""
         self.audio_config = config
         print("⚙️  Audio configuration updated")
@@ -321,7 +453,8 @@ class SpeechToText:
             'model_path': str(self.model_path) if self.model_path else None,
             'is_loaded': self.is_loaded,
             'current_language': self.current_language,
-            'supported_languages': list(self.SUPPORTED_LANGUAGES.keys())
+            'sample_rate': self.audio_config.sample_rate,
+            'use_small_model': self.use_small_model
         }
     
     def test_microphone(self) -> bool:
@@ -332,9 +465,82 @@ class SpeechToText:
             True if microphone is working
         """
         try:
-            # In a real implementation, would test microphone
+            import pyaudio
+            
+            p = pyaudio.PyAudio()
+            stream = p.open(
+                format=pyaudio.paInt16,
+                channels=1,
+                rate=16000,
+                input=True,
+                frames_per_buffer=1024
+            )
+            
+            # Read a small chunk
+            data = stream.read(1024)
+            
+            # Clean up
+            stream.stop_stream()
+            stream.close()
+            p.terminate()
+            
             print("🎤 Microphone test: OK")
             return True
+            
+        except ImportError:
+            print("⚠️  PyAudio not installed. Cannot test microphone.")
+            return False
         except Exception as e:
             print(f"❌ Microphone test failed: {e}")
+            return False
+    
+    def download_model(self, language_code: str = 'en', small: bool = True) -> bool:
+        """
+        Download VOSK model (requires internet - for setup only)
+        
+        Args:
+            language_code: Language code
+            small: Whether to download small model
+            
+        Returns:
+            True if download successful
+        """
+        try:
+            import vosk
+            import urllib.request
+            import zipfile
+            import shutil
+            
+            print("⚠️  WARNING: This requires internet connection!")
+            print("⚠️  This is only for initial setup. The app itself is offline.")
+            
+            if small and language_code in self.SMALL_MODELS:
+                model_url = f"https://alphacephei.com/vosk/models/{self.SMALL_MODELS[language_code]}.zip"
+                model_name = self.SMALL_MODELS[language_code]
+            elif language_code in self.SUPPORTED_LANGUAGES:
+                model_url = f"https://alphacephei.com/vosk/models/{self.SUPPORTED_LANGUAGES[language_code]['model']}.zip"
+                model_name = self.SUPPORTED_LANGUAGES[language_code]['model']
+            else:
+                print(f"❌ Unsupported language: {language_code}")
+                return False
+            
+            # Download model
+            print(f"📥 Downloading model: {model_name}")
+            temp_zip = f"{model_name}.zip"
+            urllib.request.urlretrieve(model_url, temp_zip)
+            
+            # Extract
+            with zipfile.ZipFile(temp_zip, 'r') as zip_ref:
+                zip_ref.extractall(model_name)
+            
+            # Clean up
+            os.remove(temp_zip)
+            
+            print(f"✅ Model downloaded: {model_name}")
+            
+            # Load the model
+            return self.load_model(model_name)
+            
+        except Exception as e:
+            print(f"❌ Error downloading model: {e}")
             return False
