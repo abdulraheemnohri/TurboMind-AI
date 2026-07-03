@@ -25,8 +25,15 @@ jobs:
         unzip -q cmdline-tools.zip
         mkdir -p android-sdk/cmdline-tools/latest
         mv cmdline-tools/* android-sdk/cmdline-tools/latest/ 2>/dev/null || true
+
+        # Create legacy tools/bin location expected by buildozer and other SDK tooling
+        mkdir -p android-sdk/tools/bin
+        ln -sf "$PWD/android-sdk/cmdline-tools/latest/bin/sdkmanager" "$PWD/android-sdk/tools/bin/sdkmanager"
+        chmod +x "$PWD/android-sdk/tools/bin/sdkmanager"
+
         export ANDROID_HOME=$PWD/android-sdk
-        export PATH=$PATH:$ANDROID_HOME/cmdline-tools/latest/bin
+        export PATH=$PATH:$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/tools/bin
+
         yes | sdkmanager --sdk_root=$ANDROID_HOME --licenses > /dev/null
         sdkmanager --sdk_root=$ANDROID_HOME "platform-tools" "platforms;android-30" "build-tools;30.0.3"
     - run: |
