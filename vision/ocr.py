@@ -3,14 +3,31 @@
 """
 TurboMind AI - OCR Processor
 =============================
-Optical Character Recognition for images
+Optical Character Recognition for images using offline models
 """
 
 import os
+import sys
 from pathlib import Path
 from typing import Dict, Any, List, Optional, Tuple
 from dataclasses import dataclass, field
 import numpy as np
+
+# Try to import CV2
+try:
+    import cv2
+    CV2_AVAILABLE = True
+except ImportError:
+    CV2_AVAILABLE = False
+    print("⚠️  OpenCV not installed. Some OCR features may not work.")
+
+# Try to import PIL
+try:
+    from PIL import Image
+    PIL_AVAILABLE = True
+except ImportError:
+    PIL_AVAILABLE = False
+    print("⚠️  PIL not installed. Some OCR features may not work.")
 
 
 @dataclass
@@ -18,7 +35,7 @@ class OCRResult:
     """Result of OCR processing"""
     text: str
     confidence: float = 0.0
-    language: str = "en"
+    language: str = "eng"
     regions: List[Dict[str, Any]] = field(default_factory=list)
     metadata: Dict[str, Any] = field(default_factory=dict)
 
@@ -37,6 +54,7 @@ class OCRProcessor:
     """
     Processes images to extract text using OCR.
     Supports multiple OCR engines (Tesseract, EasyOCR, PaddleOCR).
+    Works completely offline once models are downloaded.
     """
     
     def __init__(self, engine: str = "tesseract"):
@@ -49,7 +67,12 @@ class OCRProcessor:
         self.engine = engine
         self.available_engines = ['tesseract', 'easyocr', 'paddle']
         self.initialized = False
-        self.languages = ['eng', 'urd', 'ara', 'fra', 'spa', 'deu']
+        self.languages = ['eng', 'urd', 'ara', 'fra', 'spa', 'deu', 'hin']
+        
+        # Engine-specific components
+        self.pytesseract = None
+        self.easyocr = None
+        self.paddleocr = None
         
         self._init_engine()
         print(f"🔍 OCR Processor initialized ({engine} engine)")
@@ -58,23 +81,21 @@ class OCRProcessor:
         """Initialize the selected OCR engine"""
         try:
             if self.engine == "tesseract":
-                self._init_tesseract()
+                return self._init_tesseract()
             elif self.engine == "easyocr":
-                self._init_easyocr()
+                return self._init_easyocr()
             elif self.engine == "paddle":
-                self._init_paddle()
+                return self._init_paddle()
             else:
                 print(f"⚠️  Unknown OCR engine: {self.engine}")
                 return False
             
-            self.initialized = True
-            return True
         except Exception as e:
             print(f"❌ Error initializing OCR engine: {e}")
             self.initialized = False
             return False
     
-    def _init_tesseract(self):
+    def _init_tesseract(self) -> bool:
         """Initialize Tesseract OCR"""
         try:
             import pytesseract
@@ -87,29 +108,43 @@ class OCRProcessor:
             except:
                 print("✅ Tesseract OCR initialized")
             
+            self.initialized = True
+            return True
+            
         except ImportError:
             print("⚠️  Tesseract not installed. Install with: pip install pytesseract")
-            raise
+            print("⚠️  Also install Tesseract engine: https://github.com/tesseract-ocr/tesseract")
+            print("⚠️  For Urdu: install tesseract-ocr-urd package")
+            self.initialized = False
+            return False
     
-    def _init_easyocr(self):
+    def _init_easyocr(self) -> bool:
         """Initialize EasyOCR"""
         try:
             import easyocr
             self.easyocr = easyocr
             print("✅ EasyOCR initialized")
+            self.initialized = True
+            return True
         except ImportError:
             print("⚠️  EasyOCR not installed. Install with: pip install easyocr")
-            raise
+            print("⚠️  Note: EasyOCR will download models on first use (requires internet)")
+            self.initialized = False
+            return False
     
-    def _init_paddle(self):
+    def _init_paddle(self) -> bool:
         """Initialize PaddleOCR"""
         try:
             from paddleocr import PaddleOCR
             self.paddleocr = PaddleOCR
             print("✅ PaddleOCR initialized")
+            self.initialized = True
+            return True
         except ImportError:
             print("⚠️  PaddleOCR not installed. Install with: pip install paddleocr")
-            raise
+            print("⚠️  Note: PaddleOCR requires paddlepaddle")
+            self.initialized = False
+            return False
     
     def process_image(self, image_path: str, language: str = "eng", **kwargs) -> Optional[OCRResult]:
         """
@@ -140,21 +175,10 @@ class OCRProcessor:
     
     def _process_with_tesseract(self, image_path: str, language: str, **kwargs) -> OCRResult:
         """Process image with Tesseract"""
-        import cv2
-        from PIL import Image
-        
         # Load image
-        try:
-            # Try with OpenCV
-            img = cv2.imread(image_path)
-            if img is None:
-                # Try with PIL
-                img = Image.open(image_path)
-                img = cv2.cvtColor(np.array(img), cv2.COLOR_RGB2BGR)
-        except:
-            # Try with PIL only
-            img = Image.open(image_path)
-            img = np.array(img)
+        img = self._load_image(image_path)
+        if img is None:
+            return OCRResult(text="", confidence=0.0, language=language)
         
         # Preprocess image
         img = self._preprocess_image(img)
@@ -187,19 +211,21 @@ class OCRProcessor:
                 regions.append({
                     'text': text.strip(),
                     'confidence': float(conf) if conf else 0.0,
-                    'bounding_box': (x, y, w, h),
+                    'bounding_box': (int(x), int(y), int(w), int(h)),
                     'line_number': i
                 })
         
         return OCRResult(
-            text=text.strip(),
+            text=text.strip() if text else "",
             confidence=self._calculate_confidence(data.get('conf', [])),
             language=language,
             regions=regions,
             metadata={
                 'engine': 'tesseract',
-                'image_size': os.path.getsize(image_path),
-                'page_number': kwargs.get('page', 1)
+                'image_size': os.path.getsize(image_path) if os.path.exists(image_path) else 0,
+                'page_number': kwargs.get('page', 1),
+                'image_width': img.shape[1] if len(img.shape) > 1 else 0,
+                'image_height': img.shape[0] if len(img.shape) > 0 else 0
             }
         )
     
@@ -212,13 +238,25 @@ class OCRProcessor:
             'ara': 'ar',
             'fra': 'fr',
             'spa': 'es',
-            'deu': 'de'
+            'deu': 'de',
+            'hin': 'hi'
         }
         
-        reader = self.easyocr.Reader([lang_map.get(language, 'en')])
-        results = reader.readtext(image_path, **kwargs)
+        lang = lang_map.get(language, 'en')
         
-        text = '\n'.join([r[1] for r in results])
+        # Create reader
+        reader = self.easyocr.Reader([lang])
+        
+        # Load image
+        img = self._load_image(image_path)
+        if img is None:
+            return OCRResult(text="", confidence=0.0, language=language)
+        
+        # Run OCR
+        results = reader.readtext(img, **kwargs)
+        
+        text = '
+'.join([r[1] for r in results])
         confidence = sum([float(r[2]) for r in results]) / len(results) if results else 0.0
         
         regions = [
@@ -230,6 +268,8 @@ class OCRProcessor:
             for r in results
         ]
         
+        img_size = os.path.getsize(image_path) if os.path.exists(image_path) else 0
+        
         return OCRResult(
             text=text,
             confidence=confidence,
@@ -237,7 +277,8 @@ class OCRProcessor:
             regions=regions,
             metadata={
                 'engine': 'easyocr',
-                'image_size': os.path.getsize(image_path)
+                'image_size': img_size,
+                'language_used': lang
             }
         )
     
@@ -250,11 +291,22 @@ class OCRProcessor:
             'ara': 'ar',
             'fra': 'fr',
             'spa': 'es',
-            'deu': 'de'
+            'deu': 'de',
+            'hin': 'hi'
         }
         
-        ocr = self.paddleocr(use_angle_cls=True, lang=lang_map.get(language, 'en'))
-        result = ocr.ocr(image_path, cls=True)
+        lang = lang_map.get(language, 'en')
+        
+        # Create OCR instance
+        ocr = self.paddleocr(use_angle_cls=True, lang=lang)
+        
+        # Load image
+        img = self._load_image(image_path)
+        if img is None:
+            return OCRResult(text="", confidence=0.0, language=language)
+        
+        # Run OCR
+        result = ocr.ocr(img, cls=True)
         
         text = ''
         regions = []
@@ -262,22 +314,26 @@ class OCRProcessor:
         count = 0
         
         for idx, detection in enumerate(result):
-            for line in detection:
-                if isinstance(line, list) and len(line) >= 2:
-                    text_line = line[1][0] if isinstance(line[1], list) else str(line[1])
-                    conf = float(line[1][1]) if isinstance(line[1], list) and len(line[1]) > 1 else 0.0
-                    
-                    text += text_line + '\n'
-                    confidence_total += conf
-                    count += 1
-                    
-                    regions.append({
-                        'text': text_line,
-                        'confidence': conf,
-                        'bounding_box': tuple(map(int, line[0])) if isinstance(line[0], list) else (0, 0, 0, 0)
-                    })
+            if isinstance(detection, list):
+                for line in detection:
+                    if isinstance(line, list) and len(line) >= 2:
+                        text_line = line[1][0] if isinstance(line[1], list) else str(line[1])
+                        conf = float(line[1][1]) if isinstance(line[1], list) and len(line[1]) > 1 else 0.0
+                        
+                        text += text_line + '
+'
+                        confidence_total += conf
+                        count += 1
+                        
+                        bbox = line[0] if isinstance(line[0], list) else [0, 0, 0, 0]
+                        regions.append({
+                            'text': text_line,
+                            'confidence': conf,
+                            'bounding_box': tuple(map(int, bbox))
+                        })
         
         confidence = confidence_total / count if count > 0 else 0.0
+        img_size = os.path.getsize(image_path) if os.path.exists(image_path) else 0
         
         return OCRResult(
             text=text.strip(),
@@ -286,21 +342,51 @@ class OCRProcessor:
             regions=regions,
             metadata={
                 'engine': 'paddle',
-                'image_size': os.path.getsize(image_path)
+                'image_size': img_size,
+                'language_used': lang
             }
         )
     
+    def _load_image(self, image_path: str) -> Optional[np.ndarray]:
+        """Load an image from file"""
+        try:
+            if CV2_AVAILABLE:
+                img = cv2.imread(image_path)
+                if img is not None:
+                    return img
+            
+            if PIL_AVAILABLE:
+                img = Image.open(image_path)
+                return np.array(img)
+            
+            print(f"❌ Cannot load image: {image_path} (no CV2 or PIL)")
+            return None
+            
+        except Exception as e:
+            print(f"❌ Error loading image: {e}")
+            return None
+    
     def _preprocess_image(self, img: np.ndarray) -> np.ndarray:
         """Preprocess image for better OCR results"""
-        import cv2
+        if not CV2_AVAILABLE:
+            return img
         
-        # Convert to grayscale
-        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        # Convert to grayscale if needed
+        if len(img.shape) == 3 and img.shape[2] == 3:
+            gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        elif len(img.shape) == 3 and img.shape[2] == 4:
+            gray = cv2.cvtColor(img, cv2.COLOR_BGRA2GRAY)
+        else:
+            gray = img
         
-        # Apply thresholding
-        _, thresh = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+        # Apply adaptive thresholding
+        thresh = cv2.adaptiveThreshold(
+            gray, 255, 
+            cv2.ADAPTIVE_THRESH_GAUSSIAN_C, 
+            cv2.THRESH_BINARY, 11, 2
+        )
         
-        # Apply dilation and erosion to remove noise
+        # Apply morphological operations to remove noise
         kernel = np.ones((1, 1), np.uint8)
         processed = cv2.morphologyEx(thresh, cv2.MORPH_OPEN, kernel)
         
@@ -311,7 +397,14 @@ class OCRProcessor:
         if not confidences:
             return 0.0
         
-        valid_confs = [float(c) for c in confidences if c is not None and c > 0]
+        valid_confs = []
+        for c in confidences:
+            if c is not None:
+                try:
+                    valid_confs.append(float(c))
+                except:
+                    pass
+        
         return sum(valid_confs) / len(valid_confs) if valid_confs else 0.0
     
     def process_pdf(self, pdf_path: str, language: str = "eng", **kwargs) -> List[OCRResult]:
@@ -326,29 +419,61 @@ class OCRProcessor:
         Returns:
             List of OCRResult for each page
         """
-        from pdf2image import convert_from_path
-        
         results = []
         
-        # Convert PDF to images
-        images = convert_from_path(pdf_path, **kwargs)
-        
-        for i, image in enumerate(images):
-            # Save temp image
-            temp_path = f"{pdf_path}_page_{i}.png"
-            image.save(temp_path, 'PNG')
-            
-            # Process image
-            result = self.process_image(temp_path, language)
-            if result:
-                result.metadata['page_number'] = i + 1
-                results.append(result)
-            
-            # Clean up
+        try:
+            # Try to use pdf2image
             try:
-                os.remove(temp_path)
-            except:
-                pass
+                from pdf2image import convert_from_path
+                images = convert_from_path(pdf_path, **kwargs)
+                
+                for i, image in enumerate(images):
+                    # Save temp image
+                    with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as temp_file:
+                        temp_path = temp_file.name
+                    
+                    try:
+                        image.save(temp_path, 'PNG')
+                        
+                        # Process image
+                        result = self.process_image(temp_path, language, page=i+1)
+                        if result:
+                            results.append(result)
+                    finally:
+                        # Clean up
+                        try:
+                            os.unlink(temp_path)
+                        except:
+                            pass
+                        
+            except ImportError:
+                # Try with PyMuPDF (fitz)
+                try:
+                    import fitz
+                    doc = fitz.open(pdf_path)
+                    
+                    for i, page in enumerate(doc):
+                        # Render page as image
+                        pix = page.get_pixmap()
+                        temp_path = f"{pdf_path}_page_{i}_temp.png"
+                        pix.save(temp_path)
+                        
+                        try:
+                            result = self.process_image(temp_path, language, page=i+1)
+                            if result:
+                                results.append(result)
+                        finally:
+                            try:
+                                os.unlink(temp_path)
+                            except:
+                                pass
+                                
+                except ImportError:
+                    print("⚠️  Neither pdf2image nor PyMuPDF installed for PDF processing")
+                    print("⚠️  Install with: pip install pdf2image or pip install pymupdf")
+                    
+        except Exception as e:
+            print(f"❌ Error processing PDF: {e}")
         
         return results
     
@@ -386,6 +511,56 @@ class OCRProcessor:
             config='--psm 6 --oem 3'
         )
     
+    def extract_text_from_regions(self, image_path: str, regions: List[Tuple], language: str = "eng") -> List[OCRResult]:
+        """
+        Extract text from specific regions of an image.
+        
+        Args:
+            image_path: Path to the image
+            regions: List of (x, y, width, height) tuples
+            language: Language code
+            
+        Returns:
+            List of OCRResult for each region
+        """
+        results = []
+        
+        img = self._load_image(image_path)
+        if img is None:
+            return results
+        
+        for i, (x, y, w, h) in enumerate(regions):
+            # Crop region
+            if CV2_AVAILABLE:
+                region_img = img[y:y+h, x:x+w]
+            else:
+                # Simple slicing (may not work for all image types)
+                region_img = img[y:y+h, x:x+w] if len(img.shape) == 2 else img[y:y+h, x:x+w, :]
+            
+            # Save temp image
+            with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as temp_file:
+                temp_path = temp_file.name
+            
+            try:
+                if CV2_AVAILABLE:
+                    cv2.imwrite(temp_path, region_img)
+                elif PIL_AVAILABLE:
+                    Image.fromarray(region_img).save(temp_path)
+                else:
+                    continue
+                
+                result = self.process_image(temp_path, language)
+                if result:
+                    result.metadata['region_index'] = i
+                    results.append(result)
+            finally:
+                try:
+                    os.unlink(temp_path)
+                except:
+                    pass
+        
+        return results
+    
     def get_supported_languages(self) -> List[str]:
         """Get list of supported languages"""
         return self.languages.copy()
@@ -398,7 +573,8 @@ class OCRProcessor:
             'ara': 'Arabic',
             'fra': 'French',
             'spa': 'Spanish',
-            'deu': 'German'
+            'deu': 'German',
+            'hin': 'Hindi'
         }
         return names.get(code, code)
     
@@ -417,3 +593,33 @@ class OCRProcessor:
             'available_engines': self.available_engines,
             'languages': self.languages
         }
+    
+    def check_dependencies(self) -> Dict[str, bool]:
+        """Check which OCR dependencies are available"""
+        deps = {
+            'pytesseract': False,
+            'easyocr': False,
+            'paddleocr': False,
+            'opencv': CV2_AVAILABLE,
+            'pil': PIL_AVAILABLE
+        }
+        
+        try:
+            import pytesseract
+            deps['pytesseract'] = True
+        except:
+            pass
+        
+        try:
+            import easyocr
+            deps['easyocr'] = True
+        except:
+            pass
+        
+        try:
+            from paddleocr import PaddleOCR
+            deps['paddleocr'] = True
+        except:
+            pass
+        
+        return deps
