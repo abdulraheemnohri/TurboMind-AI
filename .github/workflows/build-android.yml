@@ -19,7 +19,7 @@ jobs:
     # NOTE: consider changing ndk-version to r28c to match buildozer logs (see comment below)
     - uses: nttld/setup-ndk@v1
       with:
-        ndk-version: r25b
+        ndk-version: r28c
 
     - run: |
         sudo apt update
