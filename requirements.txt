@@ -1,5 +1,44 @@
+# TurboMind AI - Python Dependencies
+# 100% Offline Android AI Assistant
+
+# Core AI/ML dependencies
 numpy>=1.24.0
 torch>=2.0.0
 transformers>=4.30.0
+sentencepiece>=0.1.99
+scipy>=1.10.0
+
+# Kivy for UI
 kivy>=2.1.0
 kivymd>=1.1.1
+
+# System monitoring
+psutil>=5.9.0
+
+# For document processing
+PyPDF2>=3.0.0
+python-docx>=0.8.11
+pillow>=9.5.0
+
+# For OCR (optional - choose one)
+# pytesseract>=0.3.10
+# easyocr>=1.7.1
+# paddleocr>=2.7.0.3
+
+# For vector search
+faiss-cpu>=1.7.4
+
+# For speech recognition (optional - offline)
+# vosk>=0.3.45
+
+# For text-to-speech (optional - offline)
+# pyttsx3>=2.90
+
+# For audio processing
+# pydub>=0.25.1
+
+# For better tokenization
+tokenizers>=0.13.3
+
+# For acceleration (optional)
+accelerate>=0.20.0
